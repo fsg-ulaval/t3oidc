@@ -19,18 +19,22 @@ class ExtensionConfigurationTest extends UnitTestCase
     public function defaultSettingsCanBeRead(): void
     {
         $settings = [
-            'clientId'          => '',
-            'clientSecret'      => '',
-            'clientScopes'      => '',
-            'endpointAuthorize' => '',
-            'endpointToken'     => '',
-            'endpointUserInfo'  => '',
-            'endpointLogout'    => '',
+            'clientId'                    => '',
+            'clientSecret'                => '',
+            'clientScopes'                => '',
+            'endpointAuthorize'           => '',
+            'endpointToken'               => '',
+            'endpointUserInfo'            => '',
+            'endpointLogout'              => '',
+            'enableBackendAuthentication' => false,
+            'backendUserMustExistLocally' => false,
+            'reEnableBackendUsers'        => false,
+            'unDeleteBackendUsers'        => false,
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
         foreach ($settings as $key => $value) {
-            $functionName = 'get' . ucwords($key);
+            $functionName = (is_bool($value) ? 'is' : 'get') . ucwords($key);
             self::assertEquals($value, $configurationInstance->$functionName());
         }
     }
@@ -43,13 +47,17 @@ class ExtensionConfigurationTest extends UnitTestCase
     public function settingsCanBeRead(): void
     {
         $settings = [
-            'clientId'          => 'foo',
-            'clientSecret'      => 'bar',
-            'clientScopes'      => 'foo',
-            'endpointAuthorize' => 'bar',
-            'endpointToken'     => 'foo',
-            'endpointUserInfo'  => 'bar',
-            'endpointLogout'    => 'foo',
+            'clientId'                    => 'foo',
+            'clientSecret'                => 'bar',
+            'clientScopes'                => 'foo',
+            'endpointAuthorize'           => 'bar',
+            'endpointToken'               => 'foo',
+            'endpointUserInfo'            => 'bar',
+            'endpointLogout'              => 'foo',
+            'enableBackendAuthentication' => true,
+            'backendUserMustExistLocally' => true,
+            'reEnableBackendUsers'        => true,
+            'unDeleteBackendUsers'        => true,
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
@@ -57,7 +65,7 @@ class ExtensionConfigurationTest extends UnitTestCase
             $configurationInstance->_set($key, $value);
         }
         foreach ($settings as $key => $value) {
-            $functionName = 'get' . ucwords($key);
+            $functionName = (is_bool($value) ? 'is' : 'get') . ucwords($key);
             self::assertEquals($value, $configurationInstance->$functionName());
         }
     }

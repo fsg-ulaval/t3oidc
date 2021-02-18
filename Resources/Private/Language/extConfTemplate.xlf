@@ -32,7 +32,18 @@
 				<source>Logout endpoint</source>
 			</trans-unit>
 
-
+			<trans-unit id="enableBackendAuthentication" resname="enableBackendAuthentication">
+				<source>Backend Authentication : Enable OpenID Connect authentication for the backend.</source>
+			</trans-unit>
+			<trans-unit id="backendUserMustExistLocally" resname="backendUserMustExistLocally">
+				<source>Backend User Must Exist : If ticked, only Backend Users who are present locally in TYPO3 will be able to authenticate with OpenID Connect. You may need to watch logs to find users who could not authenticate.</source>
+			</trans-unit>
+			<trans-unit id="reEnableBackendUsers" resname="reEnableBackendUsers">
+				<source>Re-enable Backend users : If ticked, will automatically re-enable Backend users marked as "disabled" upon successful authentication.</source>
+			</trans-unit>
+			<trans-unit id="undeleteBackendUsers" resname="undeleteBackendUsers">
+				<source>Undelete Backend users : If ticked, will automatically restore Backend users marked as "deleted" upon successful authentication.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
