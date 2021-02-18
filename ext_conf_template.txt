@@ -1,0 +1,23 @@
+# customsubcategory=client=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:categories.client
+# customsubcategory=endpoint=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:categories.endpoint
+
+# cat=advanced/client/1; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:clientId
+clientId =
+
+# cat=advanced/client/2; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:clientSecret
+clientSecret =
+
+# cat=advanced/client/3; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:clientScopes
+clientScopes = openid
+
+# cat=advanced/endpoint/1; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:endpoint.authorize
+endpointAuthorize =
+
+# cat=advanced/endpoint/2; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:endpoint.token
+endpointToken =
+
+# cat=advanced/endpoint/3; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:endpoint.userInfo
+endpointUserInfo =
+
+# cat=advanced/endpoint/4; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:endpoint.logout
+endpointLogout =
