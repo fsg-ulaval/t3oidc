@@ -7,6 +7,24 @@
 			<trans-unit id="oidc_identifier" resname="oidc_identifier">
 				<source>OpenID Connect identifier</source>
 			</trans-unit>
+			<trans-unit id="error.1613676691" xml:space="preserve">
+				<source>HTTPS is required to be able to use OpenID Connect sign in</source>
+			</trans-unit>
+			<trans-unit id="error.1613676692" xml:space="preserve">
+				<source>No client ID is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676693" xml:space="preserve">
+				<source>No client secret is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676694" xml:space="preserve">
+				<source>No authorize endpoint is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676695" xml:space="preserve">
+				<source>No token endpoint is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676696" xml:space="preserve">
+				<source>No userinfo endpoint is set. Check the manual for help</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
