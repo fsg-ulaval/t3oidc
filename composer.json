@@ -8,9 +8,9 @@
 		"OIDC",
 		"Authentication"
 	],
-	"homepage": "https://github.com/cjanody/t3oidc",
+	"homepage": "https://github.com/fsg-ulaval/t3oidc",
 	"support": {
-		"issues": "https://github.com/cjanody/t3oidc/issues"
+		"issues": "https://github.com/fsg-ulaval/t3oidc/issues"
 	},
 	"license": "GPL-2.0-or-later",
 	"authors": [
