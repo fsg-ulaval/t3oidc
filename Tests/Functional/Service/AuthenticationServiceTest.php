@@ -53,6 +53,13 @@ class AuthenticationServiceTest extends FunctionalTestCase
     ];
 
     /**
+     * @var array<string, string>
+     */
+    protected array $beDbGroup = [
+        'table'            => 'be_groups',
+    ];
+
+    /**
      * @throws DBALException
      * @throws Exception
      * @throws SchemaException
@@ -71,6 +78,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
         $this->authenticationService->_set('logger', new NullLogger());
         $this->authenticationService->_set('db_user', $this->beDbUser);
+        $this->authenticationService->_set('db_groups', $this->beDbGroup);
         $this->authenticationService->_set('login', ['status' => 'login', 'responsible' => true]);
         $this->authenticationService->_set('authInfo', ['loginType' => 'BE']);
 
@@ -79,6 +87,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->authenticationService->pObj = new BackendUserAuthentication();
         $this->importExtTablesDefinition();
         $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/be_users.xml');
+        $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/be_groups.xml');
     }
 
     /**
@@ -191,7 +200,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue(
             $this->authenticationService,
-            ['sub' => 'Foo', 'name' => 'Foo FOO', 'email' => 'foo@foo.com']
+            ['sub' => 'Foo', 'name' => 'Foo FOO', 'email' => 'foo@foo.com', 'roles' => ['editor']]
         );
 
         $user = $reflectionMethod->invoke($this->authenticationService);
@@ -200,6 +209,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         self::assertSame($endtime->getTimestamp(), $user['endtime']);
         self::assertSame('Foo FOO', $user['realName']);
         self::assertSame('foo@foo.com', $user['email']);
+        self::assertSame('9', $user['usergroup']);
     }
 
     /**
