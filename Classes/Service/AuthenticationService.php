@@ -444,6 +444,11 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
         if (empty($user['usergroup'])) {
             // Responsible, authentication ok, but user has no access defined
+            $this->session->set('t3oidcOAuthUserAccessDenied', 'NotConfigured');
+            $this->session->set(
+                't3oidcOAuthUserAccessDenied',
+                serialize(['code' => 1616191800, 'message' => 'Account not configured'])
+            );
             return 0;
         }
 
@@ -482,6 +487,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 $queriedDomain
             ));
             // Responsible, authentication ok, but domain lock not ok, do NOT check other services
+            $this->session->set(
+                't3oidcOAuthUserAccessDenied',
+                serialize(['code' => 1616191801, 'message' => 'Domain lock not met'])
+            );
             return 0;
         }
 

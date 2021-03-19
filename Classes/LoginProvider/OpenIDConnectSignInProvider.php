@@ -100,17 +100,24 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
                 $this->action = GeneralUtility::_GET('oidc')['action'];
             }
 
-            if (!$this->handleRequest()) {
-                $error = 'Unexpected error';
+            $errors = [];
+            if (GeneralUtility::_GET('error') || GeneralUtility::_GET('error_description')) {
+                $errors[] = [
+                    'code'    => GeneralUtility::_GET('error'),
+                    'message' => GeneralUtility::_GET('error_description'),
+                ];
+            } elseif (!$this->handleRequest()) {
+                $errors[] = ['code' => 1616191700, 'message' => 'Handling error'];
+            } elseif ($this->session->has('t3oidcOAuthUserAccessDenied')) {
+                $errors[] = unserialize($this->session->get('t3oidcOAuthUserAccessDenied'));
+                $this->session->remove('t3oidcOAuthUserAccessDenied');
             }
 
             // Assign variables and OpenID Connect response to view
             $view->assignMultiple([
-                                      'oidcError'            => GeneralUtility::_GET('error'),
-                                      'oidcErrorDescription' => GeneralUtility::_GET('error_description'),
-                                      'handlingError'        => $error ?? '',
-                                      'code'                 => GeneralUtility::_GET('code'),
-                                      'userInfo'             => $this->userInfo,
+                                      'oidcErrors' => $errors,
+                                      'code'       => GeneralUtility::_GET('code'),
+                                      'userInfo'   => $this->userInfo,
                                   ]);
         } catch (ConfigurationException | RuntimeException $e) {
             $view->assign('error', $e);
@@ -252,7 +259,7 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
      */
     protected function processAccessToken(AccessToken $accessToken): ?array
     {
-        $idTokenClaims     = null;
+        $idTokenClaims = null;
         if (array_key_exists('id_token', $accessToken->getValues())) {
             try {
                 $tks = explode('.', $accessToken->getValues()['id_token']);
