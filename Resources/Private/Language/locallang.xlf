@@ -69,6 +69,22 @@
 			<trans-unit id="error.1613752400" xml:space="preserve">
 				<source>The provided auth state did not match the expected value</source>
 			</trans-unit>
+
+			<trans-unit id="error.1616191700" xml:space="preserve">
+				<source>Handling exception</source>
+			</trans-unit>
+			<trans-unit id="error.1616191800" xml:space="preserve">
+				<source>Account not yet configured.</source>
+			</trans-unit>
+			<trans-unit id="error.1616191800.description" xml:space="preserve">
+				<source>Please retry later. If the error persists, contact your administrator.</source>
+			</trans-unit>
+			<trans-unit id="error.1616191801" xml:space="preserve">
+				<source>Access denied!</source>
+			</trans-unit>
+			<trans-unit id="error.1616191801.description" xml:space="preserve">
+				<source>You are not allowed to use that domain to log in.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
