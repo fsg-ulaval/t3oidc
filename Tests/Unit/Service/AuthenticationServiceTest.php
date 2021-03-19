@@ -100,7 +100,7 @@ class AuthenticationServiceTest extends UnitTestCase
      *
      * @return AuthenticationService|MockObject|AccessibleObjectInterface
      */
-    public function expect0IfDomainLockDoesNotMatch($authenticationServiceMock)
+    public function expect0IfUserHasNoAccessDefined($authenticationServiceMock)
     {
         /** @var AbstractUserAuthentication | ObjectProphecy $pObjProphecy */
         $pObjProphecy = $this->prophesize(AbstractUserAuthentication::class);
@@ -125,6 +125,38 @@ class AuthenticationServiceTest extends UnitTestCase
 
     /**
      * @test
+     * @depends expect100IfOIDCIdentifierDoesNotMatchUserInfoIdentifier
+     *
+     * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
+     *
+     * @return AuthenticationService|MockObject|AccessibleObjectInterface
+     */
+    public function expect0IfDomainLockDoesNotMatch($authenticationServiceMock)
+    {
+        /** @var AbstractUserAuthentication | ObjectProphecy $pObjProphecy */
+        $pObjProphecy = $this->prophesize(AbstractUserAuthentication::class);
+        /** @var NullLogger | ObjectProphecy $pObjProphecy */
+        $loggerProphecy = $this->prophesize(NullLogger::class);
+
+        $authenticationServiceMock->_set('pObj', $pObjProphecy->reveal());
+        $authenticationServiceMock->_set('logger', $loggerProphecy->reveal());
+        $authenticationServiceMock->_set('loginType', 'BE');
+        $authenticationServiceMock->_set('authInfo', ['HTTP_HOST' => 'example.com']);
+        $authenticationServiceMock->_set('db_user', ['username_column' => 'username']);
+
+        $user = [
+            'username'        => 'Foo',
+            'lockToDomain'    => 'not.example.com',
+            'oidc_identifier' => 'foo',
+            'usergroup'       => 1,
+        ];
+        self::assertSame(0, $authenticationServiceMock->authUser($user));
+
+        return $authenticationServiceMock;
+    }
+
+    /**
+     * @test
      * @depends expect0IfDomainLockDoesNotMatch
      *
      * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
@@ -137,6 +169,7 @@ class AuthenticationServiceTest extends UnitTestCase
             'username'        => 'Foo',
             'lockToDomain'    => 'example.com',
             'oidc_identifier' => 'foo',
+            'usergroup'       => 1,
         ];
         self::assertSame(200, $authenticationServiceMock->authUser($user));
 
@@ -155,6 +188,7 @@ class AuthenticationServiceTest extends UnitTestCase
             'username'        => 'Foo',
             'lockToDomain'    => '',
             'oidc_identifier' => 'foo',
+            'usergroup'       => 1,
         ];
         self::assertSame(200, $authenticationServiceMock->authUser($user));
     }
