@@ -168,7 +168,10 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
                      * @var AccessToken $accessToken
                      */
                     $accessToken    = $this->getOAuthClient()->getAccessToken('authorization_code', ['code' => $code]);
-                    $this->userInfo = $this->getOAuthClient()->getResourceOwner($accessToken)->toArray();
+                    $this->userInfo = array_merge(
+                        $this->getOAuthClient()->getResourceOwner($accessToken)->toArray(),
+                        $this->processAccessToken($accessToken)
+                    );
 
                     if (isset($this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()])) {
                         $this->session->set('t3oidcOAuthUser', serialize($this->userInfo));
@@ -240,5 +243,27 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
     protected function getCallbackUrl(): string
     {
         return GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST') . CallbackMiddleware::PATH;
+    }
+
+    /**
+     * @param AccessToken $accessToken
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function processAccessToken(AccessToken $accessToken): ?array
+    {
+        $idTokenClaims     = null;
+        if (array_key_exists('id_token', $accessToken->getValues())) {
+            try {
+                $tks = explode('.', $accessToken->getValues()['id_token']);
+                // Check if the id_token contains signature
+                if (2 <= count($tks) && !empty($tks[1])) {
+                    $idTokenClaims = (array)json_decode(base64_decode($tks[1]));
+                }
+            } catch (\UnexpectedValueException $e) {
+                throw new RuntimeException('Unable to parse the id_token!');
+            }
+        }
+        return $idTokenClaims;
     }
 }
