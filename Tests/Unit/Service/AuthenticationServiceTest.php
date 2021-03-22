@@ -9,6 +9,8 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use ReflectionProperty;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\TestingFramework\Core\AccessibleObjectInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -106,6 +108,12 @@ class AuthenticationServiceTest extends UnitTestCase
         $pObjProphecy = $this->prophesize(AbstractUserAuthentication::class);
         /** @var NullLogger | ObjectProphecy $pObjProphecy */
         $loggerProphecy = $this->prophesize(NullLogger::class);
+        /** @var Session<mixed> | ObjectProphecy<SessionInterface> $sessionProphecy */
+        $sessionProphecy = $this->prophesize(Session::class);
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'session');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue($authenticationServiceMock, $sessionProphecy->reveal());
 
         $authenticationServiceMock->_set('pObj', $pObjProphecy->reveal());
         $authenticationServiceMock->_set('logger', $loggerProphecy->reveal());
@@ -137,6 +145,12 @@ class AuthenticationServiceTest extends UnitTestCase
         $pObjProphecy = $this->prophesize(AbstractUserAuthentication::class);
         /** @var NullLogger | ObjectProphecy $pObjProphecy */
         $loggerProphecy = $this->prophesize(NullLogger::class);
+        /** @var Session<mixed> | ObjectProphecy<SessionInterface> $sessionProphecy */
+        $sessionProphecy = $this->prophesize(Session::class);
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'session');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue($authenticationServiceMock, $sessionProphecy->reveal());
 
         $authenticationServiceMock->_set('pObj', $pObjProphecy->reveal());
         $authenticationServiceMock->_set('logger', $loggerProphecy->reveal());
