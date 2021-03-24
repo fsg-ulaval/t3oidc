@@ -51,13 +51,19 @@
 				<source>No client secret is set. Check the manual for help</source>
 			</trans-unit>
 			<trans-unit id="error.1613676694" xml:space="preserve">
-				<source>No authorize endpoint is set. Check the manual for help</source>
+				<source>No client scope is set. Check the manual for help</source>
 			</trans-unit>
 			<trans-unit id="error.1613676695" xml:space="preserve">
-				<source>No token endpoint is set. Check the manual for help</source>
+				<source>No authorize endpoint is set. Check the manual for help</source>
 			</trans-unit>
 			<trans-unit id="error.1613676696" xml:space="preserve">
+				<source>No token endpoint is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676697" xml:space="preserve">
 				<source>No userinfo endpoint is set. Check the manual for help</source>
+			</trans-unit>
+			<trans-unit id="error.1613676698" xml:space="preserve">
+				<source>No token user identifier is set. Check the manual for help</source>
 			</trans-unit>
 
 			<trans-unit id="error.1613752400" xml:space="preserve">
