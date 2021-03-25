@@ -33,12 +33,12 @@ class AuthenticationServiceTest extends FunctionalTestCase
     use ProphecyTrait;
 
     /**
-     * @var AuthenticationService|MockObject|AccessibleObjectInterface
+     * @var AuthenticationService | MockObject | AccessibleObjectInterface
      */
     protected $authenticationService;
 
     /**
-     * @var ExtensionConfiguration|ObjectProphecy
+     * @var ExtensionConfiguration | ObjectProphecy
      */
     protected $extensionConfigurationProphesize;
 
@@ -56,7 +56,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
      * @var array<string, string>
      */
     protected array $beDbGroup = [
-        'table'            => 'be_groups',
+        'table' => 'be_groups',
     ];
 
     /**
@@ -69,6 +69,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
     protected function setUp(): void
     {
         $this->extensionConfigurationProphesize = $this->prophesize(ExtensionConfiguration::class);
+        $this->extensionConfigurationProphesize->getRoleAdmin()->willReturn('');
         $this->extensionConfigurationProphesize->getTokenUserIdentifier()->willReturn('sub');
         $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isReEnableBackendUsers()->willReturn(false);

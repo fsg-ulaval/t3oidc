@@ -83,6 +83,11 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var string
      */
+    protected string $roleAdmin = '';
+
+    /**
+     * @var string
+     */
     protected string $tokenUserIdentifier = '';
 
     /**
@@ -187,6 +192,14 @@ class ExtensionConfiguration implements SingletonInterface
     public function isUnDeleteBackendUsers(): bool
     {
         return $this->unDeleteBackendUsers;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRoleAdmin(): string
+    {
+        return $this->roleAdmin;
     }
 
     /**
