@@ -180,11 +180,15 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      */
     public function fetchUserPerms(): array
     {
-        $userPerms = ['groups' => []];
+        $userPerms = ['isAdmin' => false, 'groups' => []];
 
         $rolesKey = array_key_exists('roles', $this->userInfo) ? 'roles' : 'Roles';
         if (!is_array($this->userInfo[$rolesKey]) || empty($this->userInfo[$rolesKey])) {
             return $userPerms;
+        }
+
+        if ($adminRole = $this->extensionConfiguration->getRoleAdmin()) {
+            $userPerms['isAdmin'] = in_array($adminRole, $this->userInfo[$rolesKey]);
         }
 
         $query             = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -245,9 +249,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     }
 
     /**
-     * @param array<string,mixed> $userPerms
+     * @param array<string, mixed> $userPerms
      *
-     * @return array<string,mixed>
+     * @return array<string, mixed>
      * @throws InvalidPasswordHashException
      */
     public function insertUser(array $userPerms): array
@@ -268,7 +272,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * Inserts a new backend user
      *
-     * @param array<string,mixed> $userPerms
+     * @param array<string, mixed> $userPerms
      *
      * @return array<string, mixed>
      * @throws InvalidPasswordHashException
@@ -331,7 +335,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      * This update the logged in user record
      *
      * @param array<string, mixed> $user
-     * @param array<string,mixed>  $userPerms
+     * @param array<string, mixed> $userPerms
      *
      * @return bool
      */
@@ -339,6 +343,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     {
         $endtime = new DateTime('today +3 month');
         $updated = $this->queryBuilder->update($this->db_user['table'])
+                                      ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
                                       ->set('usergroup', implode(',', $userPerms['groups']))
                                       ->set('email', $this->userInfo['email'])
                                       ->set('realName', $this->userInfo['name'])
@@ -355,6 +360,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                       ->execute() ? true : false;
 
         if ($updated) {
+            $user['admin']     = $userPerms['isAdmin'];
             $user['usergroup'] = implode(',', $userPerms['groups']);
             $user['email']     = $this->userInfo['email'];
             $user['realName']  = $this->userInfo['name'];
@@ -370,7 +376,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * Find a user
      *
-     * @return array<string,string>|null
+     * @return array<string, string>|null
      */
     public function getUser(): ?array
     {
@@ -442,7 +448,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             // Verification failed as identifier does not match. Maybe other services can handle this login.
             return 100;
         }
-        if (empty($user['usergroup'])) {
+        if (!$this->hasWorkspacePerms($user)) {
             // Responsible, authentication ok, but user has no access defined
             $this->session->set('t3oidcOAuthUserAccessDenied', 'NotConfigured');
             $this->session->set(
@@ -500,5 +506,18 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             $user[$this->db_user['username_column']]
         );
         return 200;
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     *
+     * @return bool
+     */
+    protected function hasWorkspacePerms(array $user): bool
+    {
+        $beUser       = clone $GLOBALS['BE_USER'];
+        $beUser->user = $user;
+        $beUser->fetchGroupData();
+        return ($beUser->getDefaultWorkspace() >= 0) ?: false;
     }
 }

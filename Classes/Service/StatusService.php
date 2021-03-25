@@ -35,7 +35,7 @@ class StatusService
      * @param string $mode
      *
      * @return bool
-     * @throws UnexpectedValueException|HTTPSConnectionException|ConfigurationException
+     * @throws UnexpectedValueException | HTTPSConnectionException | ConfigurationException
      */
     public static function isEnabled(string $mode): bool
     {
