@@ -12,6 +12,7 @@ use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\TestingFramework\Core\AccessibleObjectInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -28,6 +29,20 @@ class AuthenticationServiceTest extends UnitTestCase
     private $extensionConfigurationMock;
 
     /**
+     * @var BackendUserAuthentication | ObjectProphecy
+     */
+    private $beUserProphecy;
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $beUser = [
+        'uid'             => '1',
+        'username'        => 'Foo',
+        'oidc_identifier' => 'foo',
+    ];
+
+    /**
      * Sets up this test case.
      */
     protected function setUp(): void
@@ -35,6 +50,12 @@ class AuthenticationServiceTest extends UnitTestCase
         parent::setUp();
 
         $this->resetSingletonInstances = true;
+
+        $this->beUserProphecy = $this->prophesize(BackendUserAuthentication::class);
+        $this->beUserProphecy->fetchGroupData()->willReturn();
+        $this->beUserProphecy->getDefaultWorkspace()->willReturn(0);
+        $this->beUserProphecy->setLogger(new NullLogger());
+        $GLOBALS['BE_USER'] = $this->beUserProphecy->reveal();
     }
 
     /**
@@ -47,7 +68,7 @@ class AuthenticationServiceTest extends UnitTestCase
         $authenticationServiceMock = $this->getAccessibleMock(AuthenticationService::class, ['dummy'], [], '', false);
         $authenticationServiceMock->_set('login', ['responsible' => false]);
 
-        self::assertSame(100, $authenticationServiceMock->authUser([]));
+        self::assertSame(100, $authenticationServiceMock->authUser($this->beUser));
 
         return $authenticationServiceMock;
     }
@@ -64,7 +85,8 @@ class AuthenticationServiceTest extends UnitTestCase
     {
         $authenticationServiceMock->_set('login', ['responsible' => true]);
 
-        self::assertSame(100, $authenticationServiceMock->authUser([]));
+        $user = array_merge($this->beUser, ['oidc_identifier' => null]);
+        self::assertSame(100, $authenticationServiceMock->authUser($user));
 
         return $authenticationServiceMock;
     }
@@ -89,7 +111,8 @@ class AuthenticationServiceTest extends UnitTestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($authenticationServiceMock, ['sub' => 'foo']);
 
-        self::assertSame(100, $authenticationServiceMock->authUser(['oidc_identifier' => 'bar']));
+        $user = array_merge($this->beUser, ['oidc_identifier' => 'bar']);
+        self::assertSame(100, $authenticationServiceMock->authUser($user));
 
         return $authenticationServiceMock;
     }
@@ -100,7 +123,7 @@ class AuthenticationServiceTest extends UnitTestCase
      *
      * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
      *
-     * @return AuthenticationService|MockObject|AccessibleObjectInterface
+     * @return AuthenticationService | MockObject | AccessibleObjectInterface
      */
     public function expect0IfUserHasNoAccessDefined($authenticationServiceMock)
     {
@@ -121,12 +144,10 @@ class AuthenticationServiceTest extends UnitTestCase
         $authenticationServiceMock->_set('authInfo', ['HTTP_HOST' => 'example.com']);
         $authenticationServiceMock->_set('db_user', ['username_column' => 'username']);
 
-        $user = [
-            'username'        => 'Foo',
-            'lockToDomain'    => 'not.example.com',
-            'oidc_identifier' => 'foo',
-        ];
-        self::assertSame(0, $authenticationServiceMock->authUser($user));
+        $this->beUserProphecy->getDefaultWorkspace()->willReturn(-99);
+        $GLOBALS['BE_USER'] = $this->beUserProphecy->reveal();
+
+        self::assertSame(0, $authenticationServiceMock->authUser($this->beUser));
 
         return $authenticationServiceMock;
     }
@@ -136,74 +157,33 @@ class AuthenticationServiceTest extends UnitTestCase
      * @depends expect100IfOIDCIdentifierDoesNotMatchUserInfoIdentifier
      *
      * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
-     *
-     * @return AuthenticationService|MockObject|AccessibleObjectInterface
      */
-    public function expect0IfDomainLockDoesNotMatch($authenticationServiceMock)
+    public function expect0IfDomainLockDoesNotMatch($authenticationServiceMock): void
     {
-        /** @var AbstractUserAuthentication | ObjectProphecy $pObjProphecy */
-        $pObjProphecy = $this->prophesize(AbstractUserAuthentication::class);
-        /** @var NullLogger | ObjectProphecy $pObjProphecy */
-        $loggerProphecy = $this->prophesize(NullLogger::class);
-        /** @var Session<mixed> | ObjectProphecy<SessionInterface> $sessionProphecy */
-        $sessionProphecy = $this->prophesize(Session::class);
-
-        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'session');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($authenticationServiceMock, $sessionProphecy->reveal());
-
-        $authenticationServiceMock->_set('pObj', $pObjProphecy->reveal());
-        $authenticationServiceMock->_set('logger', $loggerProphecy->reveal());
-        $authenticationServiceMock->_set('loginType', 'BE');
-        $authenticationServiceMock->_set('authInfo', ['HTTP_HOST' => 'example.com']);
-        $authenticationServiceMock->_set('db_user', ['username_column' => 'username']);
-
-        $user = [
-            'username'        => 'Foo',
-            'lockToDomain'    => 'not.example.com',
-            'oidc_identifier' => 'foo',
-            'usergroup'       => 1,
-        ];
+        $user = array_merge($this->beUser, ['lockToDomain' => 'not.example.com']);
         self::assertSame(0, $authenticationServiceMock->authUser($user));
-
-        return $authenticationServiceMock;
     }
 
     /**
      * @test
-     * @depends expect0IfDomainLockDoesNotMatch
+     * @depends expect100IfOIDCIdentifierDoesNotMatchUserInfoIdentifier
      *
      * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
-     *
-     * @return  AuthenticationService | MockObject | AccessibleObjectInterface
      */
-    public function expect200IfDomainLockDoesMatch($authenticationServiceMock)
+    public function expect200IfDomainLockDoesMatch($authenticationServiceMock): void
     {
-        $user = [
-            'username'        => 'Foo',
-            'lockToDomain'    => 'example.com',
-            'oidc_identifier' => 'foo',
-            'usergroup'       => 1,
-        ];
+        $user = array_merge($this->beUser, ['lockToDomain' => 'example.com']);
         self::assertSame(200, $authenticationServiceMock->authUser($user));
-
-        return $authenticationServiceMock;
     }
 
     /**
      * @test
-     * @depends expect200IfDomainLockDoesMatch
+     * @depends expect100IfOIDCIdentifierDoesNotMatchUserInfoIdentifier
      *
      * @param AuthenticationService | MockObject | AccessibleObjectInterface $authenticationServiceMock
      */
     public function expect200IfNoDomainLock($authenticationServiceMock): void
     {
-        $user = [
-            'username'        => 'Foo',
-            'lockToDomain'    => '',
-            'oidc_identifier' => 'foo',
-            'usergroup'       => 1,
-        ];
-        self::assertSame(200, $authenticationServiceMock->authUser($user));
+        self::assertSame(200, $authenticationServiceMock->authUser($this->beUser));
     }
 }
