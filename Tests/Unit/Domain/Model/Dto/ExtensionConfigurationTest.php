@@ -31,6 +31,7 @@ class ExtensionConfigurationTest extends UnitTestCase
             'backendUserMustExistLocally' => false,
             'reEnableBackendUsers'        => false,
             'unDeleteBackendUsers'        => false,
+            'roleAdmin'                   => '',
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
@@ -60,6 +61,7 @@ class ExtensionConfigurationTest extends UnitTestCase
             'backendUserMustExistLocally' => true,
             'reEnableBackendUsers'        => true,
             'unDeleteBackendUsers'        => true,
+            'roleAdmin'                   => 'foo',
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
