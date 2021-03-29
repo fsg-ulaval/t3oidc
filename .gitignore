@@ -29,3 +29,6 @@ tags
 
 # PhpStorm .gitignore
 .idea/
+
+# ignore generated documentation
+*GENERATED*
