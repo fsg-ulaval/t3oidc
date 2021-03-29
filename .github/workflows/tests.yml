@@ -1,9 +1,7 @@
-name: tests
-
+name: Continous Integration
 on: [push, pull_request]
 
 jobs:
-
   testsuite:
     name: all tests
     runs-on: ubuntu-latest
