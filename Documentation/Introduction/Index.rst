@@ -17,13 +17,13 @@ Screenshots
 ===========
 
 .. figure:: ../Images/BackendLogin.png
-   :class: with-shadow
+   :class: with-shadow m-auto
    :alt: Backend login interface after installation
 
    Backend login interface after installation.
 
 .. figure:: ../Images/BackendLoginAfterAuthentication.png
-   :class: with-shadow
+   :class: with-shadow m-auto
    :alt: Backend login interface after a successful log in
 
    Backend login interface after a successful log in.
