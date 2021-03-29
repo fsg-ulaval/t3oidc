@@ -47,4 +47,5 @@ Configuration
     :maxdepth: 3
 
     ExtensionConfiguration/Index
+    AccountConfiguration/Index
 
