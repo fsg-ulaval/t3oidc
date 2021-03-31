@@ -47,6 +47,71 @@ class StatusServiceTest extends UnitTestCase
     }
 
     /**
+     * Test if the frontend authentication is disabled by default
+     *
+     * @test
+     */
+    public function expectFalseForIsEnableFrontendAuthentication(): void
+    {
+        $this->initializeRequest();
+
+        $settings = [
+            'clientId'            => 'foo',
+            'clientSecret'        => 'bar',
+            'clientScopes'        => 'foo',
+            'endpointAuthorize'   => 'bar',
+            'endpointToken'       => 'foo',
+            'endpointUserInfo'    => 'bar',
+            'tokenUserIdentifier' => 'foo',
+        ];
+
+        $extensionConfigurationMock = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
+        foreach ($settings as $key => $value) {
+            $extensionConfigurationMock->_set($key, $value);
+        }
+
+        /**
+         * @var ExtensionConfiguration $extensionConfigurationMock
+         */
+        GeneralUtility::setSingletonInstance(ExtensionConfiguration::class, $extensionConfigurationMock);
+
+        self::assertFalse(StatusService::isEnabled('FE'));
+    }
+
+    /**
+     * Test if the frontend authentication is disabled by default
+     *
+     * @test
+     */
+    public function expectTrueForIsEnableFrontendAuthentication(): void
+    {
+        $this->initializeRequest();
+
+        $settings = [
+            'clientId'                    => 'foo',
+            'clientSecret'                => 'bar',
+            'clientScopes'                => 'foo',
+            'endpointAuthorize'           => 'bar',
+            'endpointToken'               => 'foo',
+            'endpointUserInfo'            => 'bar',
+            'tokenUserIdentifier'         => 'foo',
+            'enableFrontendAuthentication' => true,
+        ];
+
+        $extensionConfigurationMock = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
+        foreach ($settings as $key => $value) {
+            $extensionConfigurationMock->_set($key, $value);
+        }
+
+        /**
+         * @var ExtensionConfiguration $extensionConfigurationMock
+         */
+        GeneralUtility::setSingletonInstance(ExtensionConfiguration::class, $extensionConfigurationMock);
+
+        self::assertTrue(StatusService::isEnabled('FE'));
+    }
+
+    /**
      * Test if the backend authentication is disabled by default
      *
      * @test
