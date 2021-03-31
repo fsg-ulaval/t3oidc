@@ -25,12 +25,21 @@ use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
+/**
+ * Class CallbackMiddleware
+ */
 class CallbackMiddleware implements MiddlewareInterface
 {
     const PATH = '/oidc/callback';
 
     const BACKEND_URI = '%s/typo3/?loginProvider=%d&code=%s&state=%s';
 
+    /**
+     * @param ServerRequestInterface  $request
+     * @param RequestHandlerInterface $handler
+     *
+     * @return ResponseInterface
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (strpos($request->getUri()->getPath(), self::PATH) === false) {
@@ -41,6 +50,11 @@ class CallbackMiddleware implements MiddlewareInterface
         return $this->handleBackendCallback($request);
     }
 
+    /**
+     * @param ServerRequestInterface $request
+     *
+     * @return RedirectResponse
+     */
     protected function handleBackendCallback(ServerRequestInterface $request): RedirectResponse
     {
         $queryParams = $request->getQueryParams();
