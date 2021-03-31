@@ -63,6 +63,26 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
+    protected bool $enableFrontendAuthentication = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $frontendUserMustExistLocally = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $reEnableFrontendUsers = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $unDeleteFrontendUsers = false;
+
+    /**
+     * @var bool
+     */
     protected bool $enableBackendAuthentication = false;
 
     /**
@@ -160,6 +180,38 @@ class ExtensionConfiguration implements SingletonInterface
     public function getEndpointLogout(): string
     {
         return $this->endpointLogout;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEnableFrontendAuthentication(): bool
+    {
+        return $this->enableFrontendAuthentication;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFrontendUserMustExistLocally(): bool
+    {
+        return $this->frontendUserMustExistLocally;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isReEnableFrontendUsers(): bool
+    {
+        return $this->reEnableFrontendUsers;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUnDeleteFrontendUsers(): bool
+    {
+        return $this->unDeleteFrontendUsers;
     }
 
     /**
