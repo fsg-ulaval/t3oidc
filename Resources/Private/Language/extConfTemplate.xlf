@@ -44,6 +44,19 @@
 				<source>User identifier : The property of the ID token containing the unique user ID (default: "sub").</source>
 			</trans-unit>
 
+			<trans-unit id="enableFrontendAuthentication" resname="enableFrontendAuthentication">
+				<source>Frontend Authentication : Enable OpenID Connect authentication for the frontend.</source>
+			</trans-unit>
+			<trans-unit id="frontendUserMustExistLocally" resname="frontendUserMustExistLocally">
+				<source>Frontend User Must Exist : If ticked, only Frontend Users who are present locally in TYPO3 will be able to authenticate with OpenID Connect. You may need to watch logs to find users who could not authenticate.</source>
+			</trans-unit>
+			<trans-unit id="reEnableFrontendUsers" resname="reEnableFrontendUsers">
+				<source>Re-enable Frontend users : If ticked, will automatically re-enable Frontend users marked as "disabled" upon successful authentication.</source>
+			</trans-unit>
+			<trans-unit id="undeleteFrontendUsers" resname="undeleteFrontendUsers">
+				<source>Undelete Frontend users : If ticked, will automatically restore Frontend users marked as "deleted" upon successful authentication.</source>
+			</trans-unit>
+
 			<trans-unit id="enableBackendAuthentication" resname="enableBackendAuthentication">
 				<source>Backend Authentication : Enable OpenID Connect authentication for the backend.</source>
 			</trans-unit>
