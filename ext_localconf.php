@@ -12,7 +12,15 @@ defined('TYPO3_MODE') || die();
         FSG\Oidc\Domain\Model\Dto\ExtensionConfiguration::class
     );
 
-    $subTypes      = [];
+    $subTypes = [];
+    if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('felogin')
+        && \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Configuration\Features::class)->isFeatureEnabled('felogin.extbase')
+        && $settings->isEnableFrontendAuthentication()) {
+        $subTypes[] = 'getUserFE';
+        $subTypes[] = 'authUserFE';
+    }
+
     $loginProvider = FSG\Oidc\LoginProvider\OpenIDConnectSignInProvider::LOGIN_PROVIDER;
     if ((bool)$settings->isEnableBackendAuthentication()) {
         $subTypes[] = 'getUserBE';
