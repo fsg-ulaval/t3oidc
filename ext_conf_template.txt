@@ -3,6 +3,18 @@
 # customsubcategory=role=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:categories.role
 # customsubcategory=token=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:categories.token
 
+# cat=frontend/enable/1; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:enableFrontendAuthentication
+enableFrontendAuthentication = 0
+
+# cat=frontend/enable/2; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:frontendUserMustExistLocally
+frontendUserMustExistLocally = 0
+
+# cat=frontend/enable/3; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:reEnableFrontendUsers
+reEnableFrontendUsers = 0
+
+# cat=frontend/enable/4; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:undeleteFrontendUsers
+undeleteFrontendUsers = 0
+
 # cat=backend/enable/1; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:enableBackendAuthentication
 enableBackendAuthentication = 0
 
