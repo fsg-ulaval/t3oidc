@@ -1,0 +1,7 @@
+plugin.tx_felogin_login {
+  view {
+    templateRootPath = EXT:t3oidc/Resources/Private/Templates
+    partialRootPath =
+    layoutRootPath =
+  }
+}
