@@ -1,7 +1,9 @@
-plugin.tx_felogin_login {
-  view {
-    templateRootPaths.1613418177 = {$plugin.tx_felogin_login.view.templateRootPath}
-    partialRootPaths.1613418177 = {$plugin.tx_felogin_login.view.partialRootPath}
-    layoutRootPaths.1613418177 = {$plugin.tx_felogin_login.view.layoutRootPath}
+[extensionConfiguration('t3oidc', 'enableFrontendAuthentication')]
+  plugin.tx_felogin_login {
+    view {
+      templateRootPaths.1613418177 = {$plugin.tx_felogin_login.view.templateRootPath}
+      partialRootPaths.1613418177 = {$plugin.tx_felogin_login.view.partialRootPath}
+      layoutRootPaths.1613418177 = {$plugin.tx_felogin_login.view.layoutRootPath}
+    }
   }
-}
+[end]
