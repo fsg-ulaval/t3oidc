@@ -5,39 +5,28 @@
         <f:then>
             <div class="alert alert-danger">
                 {f:translate(key:'error.{error.code}', extensionName: 't3oidc', default:error.message)}
-            </div>
         </f:then>
         <f:else>
-            <f:if condition="{oidcError}">
+            <f:if condition="{oidcErrors -> f:count()}">
                 <f:then>
-                    <div class="alert alert-danger">
-                        <strong>{oidcError}</strong> {oidcErrorDescription}
-                    </div>
+                    <f:for each="{oidcErrors}" as="error">
+                        <div class="alert alert-danger">
+                            <strong>{f:translate(key:'error.{error.code}', extensionName: 't3oidc',
+                                default:error.message)}</strong><br>
+                            <span>{f:translate(key:'error.{error.code}.description', extensionName: 't3oidc')}</span>
+                        </div>
+                    </f:for>
                 </f:then>
                 <f:else>
-                    <f:if condition="{handlingError}">
-                        <f:then>
-                            <div class="alert alert-danger">
-                                <strong>
-                                    <f:translate
-                                        key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.handlingError.title"/>
-                                </strong>
+                    <f:if condition="{code}">
+                        <div class="alert alert-success">
+                            <strong>
                                 <f:translate
-                                    key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.handlingError.description"/>
-                            </div>
-                        </f:then>
-                        <f:else>
-                            <f:if condition="{code}">
-                                <div class="alert alert-success">
-                                    <strong>
-                                        <f:translate
-                                            key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.success.title"/>
-                                    </strong>
-                                    <f:translate
-                                        key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.success.description"/>
-                                </div>
-                            </f:if>
-                        </f:else>
+                                    key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.success.title"/>
+                            </strong>
+                            <f:translate
+                                key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logged-in.success.description"/>
+                        </div>
                     </f:if>
                 </f:else>
             </f:if>
