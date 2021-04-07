@@ -17,11 +17,21 @@ namespace FSG\Oidc\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use DateTime;
+use Doctrine\DBAL\Driver\Exception;
+use Doctrine\DBAL\Driver\Result;
 use FSG\Oidc\Domain\Model\Dto\ExtensionConfiguration;
 use FSG\Oidc\LoginProvider\OpenIDConnectSignInProvider;
+use PDO;
 use Symfony\Component\HttpFoundation\Session\Session;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Authentication\LoginType;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\InvalidPasswordHashException;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
+use TYPO3\CMS\Core\Crypto\Random;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\SysLog\Action\Login as SystemLogLoginAction;
 use TYPO3\CMS\Core\SysLog\Error as SystemLogErrorClassification;
 use TYPO3\CMS\Core\SysLog\Type as SystemLogType;
@@ -43,9 +53,14 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     private Session $session;
 
     /**
-     * @var array<string, string>
+     * @var array<string, mixed>
      */
     private array $userInfo = [];
+
+    /**
+     * @var QueryBuilder
+     */
+    private QueryBuilder $queryBuilder;
 
     /**
      * AuthenticationService constructor.
@@ -61,6 +76,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      * @param array<string, string>      $loginData
      * @param array<string, string>      $authInfo
      * @param AbstractUserAuthentication $pObj
+     *
+     * @throws Exception
+     * @throws InvalidPasswordHashException
      */
     public function initAuth($mode, $loginData, $authInfo, $pObj): void
     {
@@ -88,6 +106,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         return false;
     }
 
+    /**
+     * @throws Exception|InvalidPasswordHashException
+     */
     protected function handleLogin(): void
     {
         if ($this->login['responsible'] === true) {
@@ -95,7 +116,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 case 'getUserFE':
                 case 'getUserBE':
                     $this->logger->debug(sprintf('Process auth mode "%s".', $this->mode));
-                    // $this->insertOrUpdateUser();
+                    $this->insertOrUpdateUser();
                     break;
                 case 'authUserFE':
                 case 'authUserBE':
@@ -108,9 +129,254 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     }
 
     /**
+     * Insert or update logged in user
+     *
+     * @return array<string, string> $user
+     * @throws Exception|InvalidPasswordHashException
+     */
+    protected function insertOrUpdateUser(): array
+    {
+        $this->queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                                            ->getQueryBuilderForTable($this->db_user['table']);
+
+        $userPerms = $this->fetchUserPerms();
+        $user      = $this->fetchUserIfItExists();
+
+        // Insert a new user into database
+        if (!empty($userPerms) && empty($user) && !$this->extensionConfiguration->isBackendUserMustExistLocally()) {
+            $this->logger->notice(
+                'Insert new user.',
+                [
+                    $this->db_user['username_column'] => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+                ]
+            );
+            $user = $this->insertUser($userPerms);
+        } elseif (!empty($user)) {
+            if ($this->authInfo['loginType'] == 'BE'
+                && ($user['deleted'] == 0
+                    || $this->extensionConfiguration->isUnDeleteBackendUsers())
+                && ($user['disable'] == 0 || $this->extensionConfiguration->isReEnableBackendUsers())) {
+                if (!$this->updateUser($user, $userPerms)) {
+                    $this->logger->error(
+                        'User found but it was not updated!',
+                        [
+                            $this->db_user['userid_column']   => $user[$this->db_user['userid_column']],
+                            $this->db_user['username_column'] => $user[$this->db_user['username_column']],
+                        ]
+                    );
+                }
+            } else {
+                $user = [];
+            }
+        }
+
+        return $user;
+    }
+
+    /**
+     * Fetches the user permissions based on its roles.
+     *
+     * @return array<string, mixed>
+     */
+    public function fetchUserPerms(): array
+    {
+        $userPerms = ['isAdmin' => false, 'groups' => []];
+
+        $rolesKey = array_key_exists('roles', $this->userInfo) ? 'roles' : 'Roles';
+        if (!is_array($this->userInfo[$rolesKey]) || empty($this->userInfo[$rolesKey])) {
+            return $userPerms;
+        }
+
+        if ($adminRole = $this->extensionConfiguration->getRoleAdmin()) {
+            $userPerms['isAdmin'] = in_array($adminRole, $this->userInfo[$rolesKey]);
+        }
+
+        $query             = GeneralUtility::makeInstance(ConnectionPool::class)
+                                           ->getQueryBuilderForTable($this->db_groups['table']);
+        $expressionBuilder = $query->expr();
+        $constraints       = $expressionBuilder->andX(
+            $expressionBuilder->in(
+                'oidc_identifier',
+                $query->createNamedParameter(
+                    $this->userInfo[$rolesKey],
+                    Connection::PARAM_STR_ARRAY
+                )
+            ),
+            $expressionBuilder->orX(
+                $expressionBuilder->eq('lockToDomain', $query->quote('')),
+                $expressionBuilder->isNull('lockToDomain'),
+                $expressionBuilder->eq(
+                    'lockToDomain',
+                    $query->createNamedParameter(GeneralUtility::getIndpEnv('HTTP_HOST'))
+                )
+            )
+        );
+
+        $res = $query->select('uid')
+                     ->from($this->db_groups['table'])
+                     ->where($constraints)
+                     ->execute();
+
+        foreach ($res->fetchAllAssociative() as $group) {
+            $userPerms['groups'][] = $group['uid'];
+        }
+
+        return $userPerms;
+    }
+
+    /**
+     * This returns the logged in user record if it exists locally
+     *
+     * @return array<string, mixed>
+     * @throws Exception
+     */
+    protected function fetchUserIfItExists(): array
+    {
+        $query = $this->queryBuilder;
+        $query->getRestrictions()->removeAll();
+        $constraint = $query->expr()->eq(
+            'oidc_identifier',
+            $query->createNamedParameter($this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()])
+        );
+
+        /** @var Result $result */
+        $result = $query->select('*')
+                        ->from($this->db_user['table'])
+                        ->where($constraint)
+                        ->execute();
+
+        return $result->fetchAssociative() ?: [];
+    }
+
+    /**
+     * @param array<string, mixed> $userPerms
+     *
+     * @return array<string, mixed>
+     * @throws InvalidPasswordHashException
+     */
+    public function insertUser(array $userPerms): array
+    {
+        switch ($this->db_user['table']) {
+            case 'fe_users':
+                // $this->insertFeUser();
+                break;
+            case 'be_users':
+                $user = $this->insertBeUser($userPerms);
+                break;
+            default:
+                $this->logger->error(sprintf('"%s" is not a valid table name.', $this->db_user['table']));
+        }
+        return $user ?? [];
+    }
+
+    /**
+     * Inserts a new backend user
+     *
+     * @param array<string, mixed> $userPerms
+     *
+     * @return array<string, mixed>
+     * @throws InvalidPasswordHashException
+     */
+    public function insertBeUser(array $userPerms): array
+    {
+        $defaults = $this->getTcaDefaults();
+        $endtime  = new DateTime('today +3 month');
+
+        $preset = [
+            'pid'             => 0,
+            'tstamp'          => time(),
+            'crdate'          => time(),
+            'disable'         => 0,
+            'endtime'         => $endtime->getTimestamp(),
+            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+            'password'        => $this->getPassword(),
+            'usergroup'       => implode(',', $userPerms['groups']),
+            'email'           => $this->userInfo['email'] ?? '',
+            'realName'        => $this->userInfo['name'] ?? '',
+            'oidc_identifier' => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+        ];
+
+        $values = array_merge($defaults, $preset);
+
+        $this->queryBuilder->insert($this->db_user['table'])->values($values)->execute();
+
+        return $this->fetchUserRecord($preset['oidc_identifier']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getTcaDefaults(): array
+    {
+        $defaults = [];
+        $columns  = $GLOBALS['TCA'][$this->db_user['table']]['columns'] ?? [];
+
+        foreach ($columns as $fieldName => $field) {
+            if (isset($field['config']['default'])) {
+                $defaults[$fieldName] = $field['config']['default'];
+            }
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * @throws InvalidPasswordHashException
+     */
+    protected function getPassword(): string
+    {
+        $saltFactory = GeneralUtility::makeInstance(PasswordHashFactory::class)->getDefaultHashInstance(TYPO3_MODE);
+        $password    = GeneralUtility::makeInstance(Random::class)->generateRandomHexString(50);
+
+        return $saltFactory->getHashedPassword($password);
+    }
+
+    /**
+     * This update the logged in user record
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $userPerms
+     *
+     * @return bool
+     */
+    protected function updateUser(array &$user, array $userPerms): bool
+    {
+        $endtime = new DateTime('today +3 month');
+        $updated = $this->queryBuilder->update($this->db_user['table'])
+                                      ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
+                                      ->set('usergroup', implode(',', $userPerms['groups']))
+                                      ->set('email', $this->userInfo['email'])
+                                      ->set('realName', $this->userInfo['name'])
+                                      ->set('deleted', '0', true, PDO::PARAM_INT)
+                                      ->set('disable', '0', true, PDO::PARAM_INT)
+                                      ->set('starttime', '0', true, PDO::PARAM_INT)
+                                      ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                                      ->where(
+                                          $this->queryBuilder->expr()->eq(
+                                              'uid',
+                                              $this->queryBuilder->createNamedParameter($user['uid'], PDO::PARAM_INT)
+                                          )
+                                      )
+                                      ->execute() ? true : false;
+
+        if ($updated) {
+            $user['admin']     = $userPerms['isAdmin'];
+            $user['usergroup'] = implode(',', $userPerms['groups']);
+            $user['email']     = $this->userInfo['email'];
+            $user['realName']  = $this->userInfo['name'];
+            $user['starttime'] = 0;
+            $user['endtime']   = $endtime->getTimestamp();
+            $user['deleted']   = 0;
+            $user['disable']   = 0;
+        }
+
+        return $updated;
+    }
+
+    /**
      * Find a user
      *
-     * @return array<string,string>|null
+     * @return array<string, string>|null
      */
     public function getUser(): ?array
     {
@@ -182,6 +448,15 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             // Verification failed as identifier does not match. Maybe other services can handle this login.
             return 100;
         }
+        if (!$this->hasWorkspacePerms($user)) {
+            // Responsible, authentication ok, but user has no access defined
+            $this->session->set('t3oidcOAuthUserAccessDenied', 'NotConfigured');
+            $this->session->set(
+                't3oidcOAuthUserAccessDenied',
+                serialize(['code' => 1616191800, 'message' => 'Account not configured'])
+            );
+            return 0;
+        }
 
         $queriedDomain   = $this->authInfo['HTTP_HOST'];
         $isDomainLockMet = false;
@@ -218,6 +493,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 $queriedDomain
             ));
             // Responsible, authentication ok, but domain lock not ok, do NOT check other services
+            $this->session->set(
+                't3oidcOAuthUserAccessDenied',
+                serialize(['code' => 1616191801, 'message' => 'Domain lock not met'])
+            );
             return 0;
         }
 
@@ -227,5 +506,18 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             $user[$this->db_user['username_column']]
         );
         return 200;
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     *
+     * @return bool
+     */
+    protected function hasWorkspacePerms(array $user): bool
+    {
+        $beUser       = clone $GLOBALS['BE_USER'];
+        $beUser->user = $user;
+        $beUser->fetchGroupData();
+        return ($beUser->getDefaultWorkspace() >= 0) ?: false;
     }
 }

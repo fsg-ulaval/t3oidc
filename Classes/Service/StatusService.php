@@ -35,11 +35,11 @@ class StatusService
      * @param string $mode
      *
      * @return bool
-     * @throws UnexpectedValueException|HTTPSConnectionException|ConfigurationException
+     * @throws UnexpectedValueException | HTTPSConnectionException | ConfigurationException
      */
     public static function isEnabled(string $mode): bool
     {
-        if (!GeneralUtility::inList('BE', $mode)) {
+        if (!GeneralUtility::inList('BE,FE', $mode)) {
             throw new UnexpectedValueException(sprintf('Mode "%s" is not supported', $mode), 1613676690);
         }
 
@@ -84,6 +84,6 @@ class StatusService
             return $extensionConfiguration->isEnableBackendAuthentication();
         }
 
-        return false;
+        return $extensionConfiguration->isEnableFrontendAuthentication();
     }
 }
