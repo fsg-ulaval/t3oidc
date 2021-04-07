@@ -1,0 +1,6 @@
+services:
+  FSG\Oidc\Listener\Core\Package\Event\AfterPackageActivationListener:
+    tags:
+      - name: event.listener
+        identifier: t3oidcAfterPackageActivationListener
+        event: TYPO3\CMS\Core\Package\Event\AfterPackageActivationEvent
