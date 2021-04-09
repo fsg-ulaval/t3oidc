@@ -145,8 +145,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $userPerms = $this->fetchUserPerms();
         $user      = $this->fetchUserIfItExists();
 
+        $context = $this->authInfo['loginType'] == 'BE' ? 'Backend' : 'Frontend';
         // Insert a new user into database
-        if (!empty($userPerms) && empty($user) && !$this->extensionConfiguration->isBackendUserMustExistLocally()) {
+        if (!empty($userPerms) && empty($user)
+            && !$this->extensionConfiguration->{'is' . $context . 'UserMustExistLocally'}()) {
             $this->logger->notice(
                 'Insert new user.',
                 [
@@ -155,10 +157,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             );
             $user = $this->insertUser($userPerms);
         } elseif (!empty($user)) {
-            if ($this->authInfo['loginType'] == 'BE'
-                && ($user['deleted'] == 0
-                    || $this->extensionConfiguration->isUnDeleteBackendUsers())
-                && ($user['disable'] == 0 || $this->extensionConfiguration->isReEnableBackendUsers())) {
+            if (($user['deleted'] == 0
+                 || $this->extensionConfiguration->{'isUnDelete' . $context . 'Users'}())
+                && ($user['disable'] == 0
+                    || $this->extensionConfiguration->{'isReEnable' . $context . 'Users'}())) {
                 if (!$this->updateUser($user, $userPerms)) {
                     $this->logger->error(
                         'User found but it was not updated!',
@@ -282,6 +284,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      */
     public function insertFeUser(array $userPerms): array
     {
+        if (empty($userPerms['groups'])) {
+            return [];
+        }
+
         $defaults = $this->getTcaDefaults();
         $endtime  = new DateTime('today +3 month');
 
@@ -316,6 +322,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      */
     public function insertBeUser(array $userPerms): array
     {
+        if (empty($userPerms['groups']) && !$userPerms['isAdmin']) {
+            return [];
+        }
+
         $defaults = $this->getTcaDefaults();
         $endtime  = new DateTime('today +3 month');
 
@@ -327,6 +337,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             'endtime'         => $endtime->getTimestamp(),
             'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
             'password'        => $this->getPassword(),
+            'admin'           => ($userPerms['isAdmin'] ? 1 : 0),
             'usergroup'       => implode(',', $userPerms['groups']),
             'email'           => $this->userInfo['email'] ?? '',
             'realName'        => $this->userInfo['name'] ?? '',
@@ -369,14 +380,78 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     }
 
     /**
-     * This update the logged in user record
-     *
      * @param array<string, mixed> $user
      * @param array<string, mixed> $userPerms
      *
      * @return bool
      */
     protected function updateUser(array &$user, array $userPerms): bool
+    {
+        switch ($this->db_user['table']) {
+            case 'fe_users':
+                $updated = $this->updateFeUser($user, $userPerms);
+                break;
+            case 'be_users':
+                $updated = $this->updateBeUser($user, $userPerms);
+                break;
+            default:
+                $this->logger->error(sprintf('"%s" is not a valid table name.', $this->db_user['table']));
+        }
+        return $updated ?? false;
+    }
+
+    /**
+     * This update the frontend logged in user record
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $userPerms
+     *
+     * @return bool
+     */
+    protected function updateFeUser(array &$user, array $userPerms): bool
+    {
+        $endtime = new DateTime('today +3 month');
+        $updated = $this->queryBuilder->update($this->db_user['table'])
+                                      ->set('usergroup', implode(',', $userPerms['groups']))
+                                      ->set('email', $this->userInfo['email'])
+                                      ->set('name', $this->userInfo['name'])
+                                      ->set('deleted', '0', true, PDO::PARAM_INT)
+                                      ->set('disable', '0', true, PDO::PARAM_INT)
+                                      ->set('starttime', '0', true, PDO::PARAM_INT)
+                                      ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                                      ->where(
+                                          $this->queryBuilder->expr()->eq(
+                                              'uid',
+                                              $this->queryBuilder->createNamedParameter(
+                                                  $user['uid'],
+                                                  PDO::PARAM_INT
+                                              )
+                                          )
+                                      )
+                                      ->execute() ? true : false;
+
+        if ($updated) {
+            $user['usergroup'] = implode(',', $userPerms['groups']);
+            $user['email']     = $this->userInfo['email'];
+            $user['name']      = $this->userInfo['name'];
+            $user['starttime'] = 0;
+            $user['endtime']   = $endtime->getTimestamp();
+            $user['deleted']   = 0;
+            $user['disable']   = 0;
+        }
+
+        return $updated;
+    }
+
+    /**
+     * This update the backend logged in user record
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $userPerms
+     *
+     * @return bool
+     */
+    protected function updateBeUser(array &$user, array $userPerms): bool
     {
         $endtime = new DateTime('today +3 month');
         $updated = $this->queryBuilder->update($this->db_user['table'])
@@ -391,7 +466,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                       ->where(
                                           $this->queryBuilder->expr()->eq(
                                               'uid',
-                                              $this->queryBuilder->createNamedParameter($user['uid'], PDO::PARAM_INT)
+                                              $this->queryBuilder->createNamedParameter(
+                                                  $user['uid'],
+                                                  PDO::PARAM_INT
+                                              )
                                           )
                                       )
                                       ->execute() ? true : false;

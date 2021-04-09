@@ -60,6 +60,23 @@ class AuthenticationServiceTest extends FunctionalTestCase
     ];
 
     /**
+     * @var array<string, string>
+     */
+    protected array $feDbUser = [
+        'table'            => 'fe_users',
+        'username_column'  => 'oidc_identifier',
+        'check_pid_clause' => '',
+        'enable_clause'    => '',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected array $feDbGroup = [
+        'table' => 'fe_groups',
+    ];
+
+    /**
      * @throws DBALException
      * @throws Exception
      * @throws SchemaException
@@ -69,19 +86,19 @@ class AuthenticationServiceTest extends FunctionalTestCase
     protected function setUp(): void
     {
         $this->extensionConfigurationProphesize = $this->prophesize(ExtensionConfiguration::class);
-        $this->extensionConfigurationProphesize->getRoleAdmin()->willReturn('');
+        $this->extensionConfigurationProphesize->getRoleAdmin()->willReturn('administrator');
         $this->extensionConfigurationProphesize->getTokenUserIdentifier()->willReturn('sub');
         $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isReEnableBackendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isBackendUserMustExistLocally()->willReturn(false);
+        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isReEnableFrontendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isFrontendUserMustExistLocally()->willReturn(false);
 
         $this->authenticationService = $this->getAccessibleMock(AuthenticationService::class, ['dummy'], [], '', false);
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
         $this->authenticationService->_set('logger', new NullLogger());
-        $this->authenticationService->_set('db_user', $this->beDbUser);
-        $this->authenticationService->_set('db_groups', $this->beDbGroup);
         $this->authenticationService->_set('login', ['status' => 'login', 'responsible' => true]);
-        $this->authenticationService->_set('authInfo', ['loginType' => 'BE']);
 
         parent::setUp();
 
@@ -89,6 +106,8 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->importExtTablesDefinition();
         $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/be_users.xml');
         $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/be_groups.xml');
+        $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/fe_users.xml');
+        $this->importDataSet(ORIGINAL_ROOT . 'typo3conf/ext/t3oidc/Tests/Functional/Fixtures/fe_groups.xml');
     }
 
     /**
@@ -122,6 +141,20 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $schemaMigrationService->importStaticData($insertStatements);
     }
 
+    private function setBackendEnvironment(): void
+    {
+        $this->authenticationService->_set('db_user', $this->beDbUser);
+        $this->authenticationService->_set('db_groups', $this->beDbGroup);
+        $this->authenticationService->_set('authInfo', ['loginType' => 'BE']);
+    }
+
+    private function setFrontendEnvironment(): void
+    {
+        $this->authenticationService->_set('db_user', $this->feDbUser);
+        $this->authenticationService->_set('db_groups', $this->feDbGroup);
+        $this->authenticationService->_set('authInfo', ['loginType' => 'FE']);
+    }
+
     /**
      * @test
      */
@@ -133,8 +166,10 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($this->authenticationService, ['sub' => '']);
 
-        $result = $this->authenticationService->getUser();
-        self::assertNull($result);
+        $this->setBackendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
+        $this->setFrontendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
     }
 
     /**
@@ -144,8 +179,10 @@ class AuthenticationServiceTest extends FunctionalTestCase
     {
         $this->authenticationService->login['responsible'] = false;
 
-        $result = $this->authenticationService->getUser();
-        self::assertNull($result);
+        $this->setBackendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
+        $this->setFrontendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
     }
 
     /**
@@ -157,42 +194,17 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($this->authenticationService, []);
 
-        $result = $this->authenticationService->getUser();
-        self::assertNull($result);
-    }
-
-    /**
-     * @test
-     */
-    public function expectNotDeletedUser(): void
-    {
-        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($this->authenticationService, ['sub' => 'Foo']);
-
-        $result = $this->authenticationService->getUser();
-        self::assertSame('Foo', $result['oidc_identifier']);
-        self::assertSame(0, (int)$result['deleted']);
-    }
-
-    /**
-     * @test
-     */
-    public function expectNullIfUserIsNotFound(): void
-    {
-        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($this->authenticationService, ['sub' => 'Bar']);
-
-        $result = $this->authenticationService->getUser();
-        self::assertNull($result);
+        $this->setBackendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
+        $this->setFrontendEnvironment();
+        self::assertNull($this->authenticationService->getUser());
     }
 
     /**
      * @test
      * @throws ReflectionException
      */
-    public function expectUpdatedActiveBEUser(): void
+    public function expectUpdatedActiveUser(): void
     {
         $reflectionMethod = new ReflectionMethod(AuthenticationService::class, 'insertOrUpdateUser');
         $reflectionMethod->setAccessible(true);
@@ -201,26 +213,44 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue(
             $this->authenticationService,
-            ['sub' => 'Foo', 'name' => 'Foo FOO', 'email' => 'foo@foo.com', 'roles' => ['editor']]
+            ['sub' => 'Foo', 'name' => 'Foo FOO', 'email' => 'foo@foo.com', 'roles' => ['editor', 'user']]
         );
 
+        // Set backend environment
+        $this->setBackendEnvironment();
+        $this->authenticationService->_set('db_user', $this->beDbUser);
+        $this->authenticationService->_set('db_groups', $this->beDbGroup);
+        $this->authenticationService->_set('authInfo', ['loginType' => 'BE']);
         $user = $reflectionMethod->invoke($this->authenticationService);
 
-        $endtime = new \DateTime('today +3 month');
+        $endtime = new DateTime('today +3 month');
         self::assertSame($endtime->getTimestamp(), $user['endtime']);
         self::assertSame('Foo FOO', $user['realName']);
         self::assertSame('foo@foo.com', $user['email']);
         self::assertSame('9', $user['usergroup']);
+
+        // Set frontend environment
+        $this->setFrontendEnvironment();
+        $user = $reflectionMethod->invoke($this->authenticationService);
+
+        $endtime = new DateTime('today +3 month');
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('Foo FOO', $user['name']);
+        self::assertSame('foo@foo.com', $user['email']);
+        self::assertSame('4', $user['usergroup']);
     }
 
     /**
      * @test
      * @throws ReflectionException
      */
-    public function expectNoBEUserIfDisableAndOrDeleted(): void
+    public function expectNoUserIfDisableAndOrDeleted(): void
     {
         $reflectionMethod = new ReflectionMethod(AuthenticationService::class, 'insertOrUpdateUser');
         $reflectionMethod->setAccessible(true);
+
+        // Set backend environment
+        $this->setBackendEnvironment();
 
         // Authentication of a deleted backend user
         $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
@@ -251,18 +281,54 @@ class AuthenticationServiceTest extends FunctionalTestCase
         );
 
         self::assertEmpty($reflectionMethod->invoke($this->authenticationService));
+
+        // Set frontend environment
+        $this->setFrontendEnvironment();
+
+        // Authentication of a deleted frontend user
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'Bar', 'name' => 'FE Bar BAR', 'email' => 'febar@bar.com']
+        );
+
+        self::assertEmpty($reflectionMethod->invoke($this->authenticationService));
+
+        // Authentication of a disabled frontend user
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'FooBar', 'name' => 'FE Foo BAR', 'email' => 'fefoobar@foobar.com']
+        );
+
+        self::assertEmpty($reflectionMethod->invoke($this->authenticationService));
+
+        // Authentication of a deleted and disabled frontend user
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'BarFoo', 'name' => 'FE Bar Foo', 'email' => 'febarfoo@barfoo.com']
+        );
+
+        self::assertEmpty($reflectionMethod->invoke($this->authenticationService));
     }
 
     /**
      * @test
      * @throws ReflectionException
      */
-    public function expectUpdatedBEUserIfDisableAndOrDeleted(): void
+    public function expectUpdatedUserIfDisableAndOrDeleted(): void
     {
         $endtime = new DateTime('today +3 month');
 
         $reflectionMethod = new ReflectionMethod(AuthenticationService::class, 'insertOrUpdateUser');
         $reflectionMethod->setAccessible(true);
+
+        // Set backend environment
+        $this->setBackendEnvironment();
 
         // Authentication of a deleted backend user
         $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(true);
@@ -311,18 +377,134 @@ class AuthenticationServiceTest extends FunctionalTestCase
         self::assertSame($endtime->getTimestamp(), $user['endtime']);
         self::assertSame('Foo BAR', $user['realName']);
         self::assertSame('foobar@foobar.com', $user['email']);
+
+        // Set frontend environment
+        $this->setFrontendEnvironment();
+
+        // Authentication of a deleted frontend user
+        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(true);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'Bar', 'name' => 'FE Bar BAR', 'email' => 'febar@bar.com']
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('FE Bar BAR', $user['name']);
+        self::assertSame('febar@bar.com', $user['email']);
+
+        // Authentication of a deleted and disabled frontend user
+        $this->extensionConfigurationProphesize->isReEnableFrontendUsers()->willReturn(true);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'BarFoo', 'name' => 'FE Bar Foo', 'email' => 'febarfoo@barfoo.com']
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('FE Bar Foo', $user['name']);
+        self::assertSame('febarfoo@barfoo.com', $user['email']);
+
+        // Authentication of a disabled frontend user
+        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(false);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'FooBar', 'name' => 'FE Foo BAR', 'email' => 'fefoobar@foobar.com']
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('FE Foo BAR', $user['name']);
+        self::assertSame('fefoobar@foobar.com', $user['email']);
     }
 
     /**
      * @test
      * @throws ReflectionException
      */
-    public function expectInsertedBEUser(): void
+    public function expectInsertedUser(): void
     {
         $endtime = new DateTime('today +3 month');
 
         $reflectionMethod = new ReflectionMethod(AuthenticationService::class, 'insertOrUpdateUser');
         $reflectionMethod->setAccessible(true);
+
+        // Set backend environment
+        $this->setBackendEnvironment();
+
+        // Authentication of a new backend user
+        $this->extensionConfigurationProphesize->isEnableBackendAuthentication()->willReturn(true);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'NewUser', 'name' => 'New USER', 'email' => 'new@user.com', 'roles' => ['editor']]
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('New USER', $user['realName']);
+        self::assertSame('new@user.com', $user['email']);
+        self::assertSame(0, $user['admin']);
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'NewUser', 'name' => 'New USER', 'email' => 'new@user.com', 'roles' => ['administrator']]
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('New USER', $user['realName']);
+        self::assertSame('new@user.com', $user['email']);
+        self::assertTrue($user['admin']);
+
+        // Set backend environment
+        $this->setFrontendEnvironment();
+
+        // Authentication of a new frontend user
+        $this->extensionConfigurationProphesize->isEnableFrontendAuthentication()->willReturn(true);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'NewUser', 'name' => 'New FE USER', 'email' => 'fenew@user.com', 'roles' => ['user']]
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertSame($endtime->getTimestamp(), $user['endtime']);
+        self::assertSame('New FE USER', $user['name']);
+        self::assertSame('fenew@user.com', $user['email']);
+    }
+
+    /**
+     * @test
+     * @throws ReflectionException
+     */
+    public function expectNotInsertedUser(): void
+    {
+        $reflectionMethod = new ReflectionMethod(AuthenticationService::class, 'insertOrUpdateUser');
+        $reflectionMethod->setAccessible(true);
+
+        // Set backend environment
+        $this->setBackendEnvironment();
 
         // Authentication of a new backend user
         $this->extensionConfigurationProphesize->isEnableBackendAuthentication()->willReturn(true);
@@ -336,8 +518,23 @@ class AuthenticationServiceTest extends FunctionalTestCase
         );
 
         $user = $reflectionMethod->invoke($this->authenticationService);
-        self::assertSame($endtime->getTimestamp(), $user['endtime']);
-        self::assertSame('New USER', $user['realName']);
-        self::assertSame('new@user.com', $user['email']);
+        self::assertEmpty($user);
+
+        // Set backend environment
+        $this->setFrontendEnvironment();
+
+        // Authentication of a new frontend user
+        $this->extensionConfigurationProphesize->isEnableFrontendAuthentication()->willReturn(true);
+        $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
+
+        $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(
+            $this->authenticationService,
+            ['sub' => 'NewUser', 'name' => 'New FE USER', 'email' => 'fenew@user.com']
+        );
+
+        $user = $reflectionMethod->invoke($this->authenticationService);
+        self::assertEmpty($user);
     }
 }
