@@ -45,7 +45,7 @@
                                 key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.login.typo3"/>
                         </button>
                         <a class="btn btn-oidc btn-block btn-login"
-                           href="?loginProvider={loginProviderIdentifier}&oidc[action]=logout">
+                           href="/oidc/authentication?action=logout">
                             <f:translate
                                 key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.logout.oidc"/>
                         </a>
@@ -57,7 +57,7 @@
                     </p>
                     <div class="form-group">
                         <a class="btn btn-block btn-oidc btn-login"
-                           href="/typo3/?loginProvider={loginProviderIdentifier}&oidc[action]=login">
+                           href="/oidc/authentication?action=login">
                             <f:translate key="LLL:EXT:t3oidc/Resources/Private/Language/locallang.xlf:form.login.oidc"/>
                         </a>
                     </div>

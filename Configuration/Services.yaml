@@ -4,3 +4,9 @@ services:
       - name: event.listener
         identifier: t3oidcAfterPackageActivationListener
         event: TYPO3\CMS\Core\Package\Event\AfterPackageActivationEvent
+
+  FSG\Oidc\Listener\FrontendLogin\Event\ModifyLoginFormViewListener:
+    tags:
+      - name: event.listener
+        identifier: t3oidc/FrontendLogin/modifyLoginFormViewListener
+        event: TYPO3\CMS\FrontendLogin\Event\ModifyLoginFormViewEvent

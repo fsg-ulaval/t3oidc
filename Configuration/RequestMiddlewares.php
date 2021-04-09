@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 return [
     'frontend' => [
+        'fsg/oidc/authentication' => [
+            'target' => \FSG\Oidc\Middleware\AuthenticationMiddleware::class,
+            'after' => [
+                'typo3/cms-frontend/authentication',
+            ],
+            'before' => [
+                'fsg/oidc/callback',
+            ],
+        ],
         'fsg/oidc/callback' => [
             'target' => \FSG\Oidc\Middleware\CallbackMiddleware::class,
             'after' => [

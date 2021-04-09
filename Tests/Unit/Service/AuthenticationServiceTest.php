@@ -141,7 +141,7 @@ class AuthenticationServiceTest extends UnitTestCase
         $authenticationServiceMock->_set('pObj', $pObjProphecy->reveal());
         $authenticationServiceMock->_set('logger', $loggerProphecy->reveal());
         $authenticationServiceMock->_set('loginType', 'BE');
-        $authenticationServiceMock->_set('authInfo', ['HTTP_HOST' => 'example.com']);
+        $authenticationServiceMock->_set('authInfo', ['HTTP_HOST' => 'example.com', 'loginType' => 'BE']);
         $authenticationServiceMock->_set('db_user', ['username_column' => 'username']);
 
         $this->beUserProphecy->getDefaultWorkspace()->willReturn(-99);

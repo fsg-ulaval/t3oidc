@@ -20,22 +20,17 @@ namespace FSG\Oidc\LoginProvider;
 use FSG\Oidc\Domain\Model\Dto\ExtensionConfiguration;
 use FSG\Oidc\Error\ConfigurationException;
 use FSG\Oidc\Error\HTTPSConnectionException;
-use FSG\Oidc\Error\InvalidStateException;
-use FSG\Oidc\Middleware\CallbackMiddleware;
 use FSG\Oidc\Service\StatusService;
-use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+use FSG\Oidc\Traits\AuthenticationTrait;
 use League\OAuth2\Client\Provider\GenericProvider;
-use League\OAuth2\Client\Token\AccessToken;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Session\Session;
 use TYPO3\CMS\Backend\Controller\LoginController;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
-use TYPO3\CMS\Core\Authentication\LoginType;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
@@ -44,13 +39,9 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
+    use AuthenticationTrait;
 
     public const LOGIN_PROVIDER = 1613676682;
-
-    /**
-     * @var string
-     */
-    private string $action = '';
 
     /**
      * @var array<string, string>
@@ -96,10 +87,6 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
             // Figure out whether extension is configured
             StatusService::isEnabled('BE');
 
-            if (isset(GeneralUtility::_GET('oidc')['action'])) {
-                $this->action = GeneralUtility::_GET('oidc')['action'];
-            }
-
             $errors = [];
             if (GeneralUtility::_GET('error') || GeneralUtility::_GET('error_description')) {
                 $errors[] = [
@@ -141,136 +128,13 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
      */
     protected function handleRequest(): bool
     {
-        try {
-            if ($this->action === LoginType::LOGOUT) {
-                // Logout user from authentication service
-                $this->logger->debug('Logout user.');
-
-                if ($this->session->has('t3oidcOAuthUser')) {
-                    $this->session->remove('t3oidcOAuthUser');
-                }
-            } elseif ($this->action === LoginType::LOGIN) {
-                // Login user to authentication service
-                $this->logger->debug('Handle backend login.');
-                $this->authenticateUser();
-            } elseif ($providedState = GeneralUtility::_GP('state')) {
-                // Process authentication service response
-                if ($this->session->has('t3oidcOAuthUser')) {
-                    $this->session->remove('t3oidcOAuthUser');
-                }
-
-                if ($this->session->has('t3oidcOAuthState')) {
-                    $expectedState = $this->session->get('t3oidcOAuthState');
-                    $this->session->remove('t3oidcOAuthState');
-                    if ($expectedState != $providedState) {
-                        throw new InvalidStateException(
-                            'The provided auth state did not match the expected value',
-                            1613752400
-                        );
-                    }
-                }
-
-                if ($code = GeneralUtility::_GP('code')) {
-                    /**
-                     * @var AccessToken $accessToken
-                     */
-                    $accessToken    = $this->getOAuthClient()->getAccessToken('authorization_code', ['code' => $code]);
-                    $this->userInfo = array_merge(
-                        $this->getOAuthClient()->getResourceOwner($accessToken)->toArray(),
-                        $this->processAccessToken($accessToken)
-                    );
-
-                    if (isset($this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()])) {
-                        $this->session->set('t3oidcOAuthUser', serialize($this->userInfo));
-                        $this->logger->notice(sprintf(
-                            'Found user with OpenID Connect identifier "%s".',
-                            $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()]
-                        ));
-                    } else {
-                        $this->userInfo = [];
-                    }
-                }
-            } else {
-                if ($this->session->has('t3oidcOAuthUser')) {
-                    $this->userInfo = unserialize($this->session->get('t3oidcOAuthUser'));
-                }
-            }
-        } catch (InvalidStateException | IdentityProviderException $e) {
-            $this->logger->error(sprintf('Error %s: %s', $e->getCode(), $e->getMessage()));
+        if (GeneralUtility::_GP('handlingError')) {
             return false;
         }
+        if ($this->session->has('t3oidcOAuthUser')) {
+            $this->userInfo = unserialize($this->session->get('t3oidcOAuthUser'));
+        }
+
         return true;
-    }
-
-    /**
-     * Initialize local session and redirect to the authentication service.
-     */
-    protected function authenticateUser(): void
-    {
-        $authorizationUrl = $this->getOAuthClient()->getAuthorizationUrl();
-
-        if ($this->session->has('t3oidcOAuthState')) {
-            $this->session->replace(['t3oidcOAuthState' => $this->getOAuthClient()->getState()]);
-        } else {
-            $this->session->set('t3oidcOAuthState', $this->getOAuthClient()->getState());
-        }
-
-        HttpUtility::redirect($authorizationUrl);
-    }
-
-    /**
-     * @return GenericProvider
-     */
-    protected function getOAuthClient(): GenericProvider
-    {
-        if (!isset($this->oauthClient)) {
-            $this->oauthClient = new GenericProvider(
-                [
-                    'clientId'                => $this->extensionConfiguration->getClientId(),
-                    'clientSecret'            => $this->extensionConfiguration->getClientSecret(),
-                    'redirectUri'             => $this->getCallbackUrl(),
-                    'urlAuthorize'            => $this->extensionConfiguration->getEndpointAuthorize(),
-                    'urlAccessToken'          => $this->extensionConfiguration->getEndpointToken(),
-                    'urlResourceOwnerDetails' => $this->extensionConfiguration->getEndpointUserInfo(),
-                    'scopes'                  => GeneralUtility::trimExplode(
-                        ',',
-                        $this->extensionConfiguration->getClientScopes(),
-                        true
-                    ),
-                ]
-            );
-        }
-
-        return $this->oauthClient;
-    }
-
-    /**
-     * @return string
-     */
-    protected function getCallbackUrl(): string
-    {
-        return GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST') . CallbackMiddleware::PATH;
-    }
-
-    /**
-     * @param AccessToken $accessToken
-     *
-     * @return array<string, mixed>|null
-     */
-    protected function processAccessToken(AccessToken $accessToken): ?array
-    {
-        $idTokenClaims = null;
-        if (array_key_exists('id_token', $accessToken->getValues())) {
-            try {
-                $tks = explode('.', $accessToken->getValues()['id_token']);
-                // Check if the id_token contains signature
-                if (2 <= count($tks) && !empty($tks[1])) {
-                    $idTokenClaims = (array)json_decode(base64_decode($tks[1]));
-                }
-            } catch (\UnexpectedValueException $e) {
-                throw new RuntimeException('Unable to parse the id_token!');
-            }
-        }
-        return $idTokenClaims;
     }
 }

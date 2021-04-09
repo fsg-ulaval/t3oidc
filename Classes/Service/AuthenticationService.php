@@ -85,7 +85,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         parent::initAuth($mode, $loginData, $authInfo, $pObj);
 
         $this->login['responsible'] = false;
-        if (GeneralUtility::_GP('loginProvider') == OpenIDConnectSignInProvider::LOGIN_PROVIDER
+        if (($authInfo['loginType'] == 'FE'
+             || ($authInfo['loginType'] == 'BE'
+                 && GeneralUtility::_GP('loginProvider')
+                    == OpenIDConnectSignInProvider::LOGIN_PROVIDER))
             && $this->initializeUserInfo()) {
             $this->login['status']      = 'login';
             $this->login['responsible'] = true;
@@ -258,7 +261,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     {
         switch ($this->db_user['table']) {
             case 'fe_users':
-                // $this->insertFeUser();
+                $user = $this->insertFeUser($userPerms);
                 break;
             case 'be_users':
                 $user = $this->insertBeUser($userPerms);
@@ -267,6 +270,40 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 $this->logger->error(sprintf('"%s" is not a valid table name.', $this->db_user['table']));
         }
         return $user ?? [];
+    }
+
+    /**
+     * Inserts a new frontend user
+     *
+     * @param array<string, mixed> $userPerms
+     *
+     * @return array<string, mixed>
+     * @throws InvalidPasswordHashException
+     */
+    public function insertFeUser(array $userPerms): array
+    {
+        $defaults = $this->getTcaDefaults();
+        $endtime  = new DateTime('today +3 month');
+
+        $preset = [
+            'pid'             => 0,
+            'tstamp'          => time(),
+            'crdate'          => time(),
+            'disable'         => 0,
+            'endtime'         => $endtime->getTimestamp(),
+            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+            'password'        => $this->getPassword(),
+            'usergroup'       => implode(',', $userPerms['groups']),
+            'name'            => $this->userInfo['name'] ?? '',
+            'email'           => $this->userInfo['email'] ?? '',
+            'oidc_identifier' => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+        ];
+
+        $values = array_merge($defaults, $preset);
+
+        $this->queryBuilder->insert($this->db_user['table'])->values($values)->execute();
+
+        return $this->fetchUserRecord($preset['oidc_identifier']);
     }
 
     /**
@@ -448,7 +485,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             // Verification failed as identifier does not match. Maybe other services can handle this login.
             return 100;
         }
-        if (!$this->hasWorkspacePerms($user)) {
+        if ($this->authInfo['loginType'] == 'BE' && !$this->hasWorkspacePerms($user)) {
             // Responsible, authentication ok, but user has no access defined
             $this->session->set('t3oidcOAuthUserAccessDenied', 'NotConfigured');
             $this->session->set(
