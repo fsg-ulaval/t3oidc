@@ -415,7 +415,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                       ->set('usergroup', implode(',', $userPerms['groups']))
                                       ->set('email', $this->userInfo['email'])
                                       ->set('name', $this->userInfo['name'])
-                                      ->set('deleted', '0', true, PDO::PARAM_INT)
+                                      ->set('deleted', (count($userPerms['groups'])?'0':'1'), true, PDO::PARAM_INT)
                                       ->set('disable', '0', true, PDO::PARAM_INT)
                                       ->set('starttime', '0', true, PDO::PARAM_INT)
                                       ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
@@ -459,7 +459,12 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                       ->set('usergroup', implode(',', $userPerms['groups']))
                                       ->set('email', $this->userInfo['email'])
                                       ->set('realName', $this->userInfo['name'])
-                                      ->set('deleted', '0', true, PDO::PARAM_INT)
+                                      ->set(
+                                          'deleted',
+                                          (($userPerms['isAdmin'] || count($userPerms['groups']))?'0':'1'),
+                                          true,
+                                          PDO::PARAM_INT
+                                      )
                                       ->set('disable', '0', true, PDO::PARAM_INT)
                                       ->set('starttime', '0', true, PDO::PARAM_INT)
                                       ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
