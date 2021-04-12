@@ -158,7 +158,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             $user = $this->insertUser($userPerms);
         } elseif (!empty($user)) {
             if (($user['deleted'] == 0
-                 || $this->extensionConfiguration->{'isUnDelete' . $context . 'Users'}())
+                 || $this->extensionConfiguration->{'isUndelete' . $context . 'Users'}())
                 && ($user['disable'] == 0
                     || $this->extensionConfiguration->{'isReEnable' . $context . 'Users'}())) {
                 if (!$this->updateUser($user, $userPerms)) {

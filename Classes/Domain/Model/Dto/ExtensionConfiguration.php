@@ -78,7 +78,7 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
-    protected bool $unDeleteFrontendUsers = false;
+    protected bool $undeleteFrontendUsers = false;
 
     /**
      * @var bool
@@ -98,7 +98,7 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
-    protected bool $unDeleteBackendUsers = false;
+    protected bool $undeleteBackendUsers = false;
 
     /**
      * @var string
@@ -209,9 +209,9 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @return bool
      */
-    public function isUnDeleteFrontendUsers(): bool
+    public function isUndeleteFrontendUsers(): bool
     {
-        return $this->unDeleteFrontendUsers;
+        return $this->undeleteFrontendUsers;
     }
 
     /**
@@ -241,9 +241,9 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @return bool
      */
-    public function isUnDeleteBackendUsers(): bool
+    public function isUndeleteBackendUsers(): bool
     {
-        return $this->unDeleteBackendUsers;
+        return $this->undeleteBackendUsers;
     }
 
     /**

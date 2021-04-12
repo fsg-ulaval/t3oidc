@@ -30,11 +30,11 @@ class ExtensionConfigurationTest extends UnitTestCase
             'enableFrontendAuthentication' => false,
             'frontendUserMustExistLocally' => false,
             'reEnableFrontendUsers'        => false,
-            'unDeleteFrontendUsers'        => false,
+            'undeleteFrontendUsers'        => false,
             'enableBackendAuthentication'  => false,
             'backendUserMustExistLocally'  => false,
             'reEnableBackendUsers'         => false,
-            'unDeleteBackendUsers'         => false,
+            'undeleteBackendUsers'         => false,
             'roleAdmin'                    => '',
         ];
 
@@ -64,11 +64,11 @@ class ExtensionConfigurationTest extends UnitTestCase
             'enableFrontendAuthentication' => true,
             'frontendUserMustExistLocally' => true,
             'reEnableFrontendUsers'        => true,
-            'unDeleteFrontendUsers'        => true,
+            'undeleteFrontendUsers'        => true,
             'enableBackendAuthentication'  => true,
             'backendUserMustExistLocally'  => true,
             'reEnableBackendUsers'         => true,
-            'unDeleteBackendUsers'         => true,
+            'undeleteBackendUsers'         => true,
             'roleAdmin'                    => 'foo',
         ];
 

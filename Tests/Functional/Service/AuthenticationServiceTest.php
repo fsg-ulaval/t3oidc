@@ -88,10 +88,10 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->extensionConfigurationProphesize = $this->prophesize(ExtensionConfiguration::class);
         $this->extensionConfigurationProphesize->getRoleAdmin()->willReturn('administrator');
         $this->extensionConfigurationProphesize->getTokenUserIdentifier()->willReturn('sub');
-        $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isUndeleteBackendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isReEnableBackendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isBackendUserMustExistLocally()->willReturn(false);
-        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isUndeleteFrontendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isReEnableFrontendUsers()->willReturn(false);
         $this->extensionConfigurationProphesize->isFrontendUserMustExistLocally()->willReturn(false);
 
@@ -331,7 +331,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->setBackendEnvironment();
 
         // Authentication of a deleted backend user
-        $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(true);
+        $this->extensionConfigurationProphesize->isUndeleteBackendUsers()->willReturn(true);
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
 
         $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
@@ -363,7 +363,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         self::assertSame('barfoo@barfoo.com', $user['email']);
 
         // Authentication of a disabled backend user
-        $this->extensionConfigurationProphesize->isUnDeleteBackendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isUndeleteBackendUsers()->willReturn(false);
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
 
         $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
@@ -382,7 +382,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         $this->setFrontendEnvironment();
 
         // Authentication of a deleted frontend user
-        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(true);
+        $this->extensionConfigurationProphesize->isUndeleteFrontendUsers()->willReturn(true);
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
 
         $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
@@ -414,7 +414,7 @@ class AuthenticationServiceTest extends FunctionalTestCase
         self::assertSame('febarfoo@barfoo.com', $user['email']);
 
         // Authentication of a disabled frontend user
-        $this->extensionConfigurationProphesize->isUnDeleteFrontendUsers()->willReturn(false);
+        $this->extensionConfigurationProphesize->isUndeleteFrontendUsers()->willReturn(false);
         $this->authenticationService->_set('extensionConfiguration', $this->extensionConfigurationProphesize->reveal());
 
         $reflectionProperty = new ReflectionProperty(AuthenticationService::class, 'userInfo');
