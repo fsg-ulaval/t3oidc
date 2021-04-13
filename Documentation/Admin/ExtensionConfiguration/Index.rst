@@ -22,6 +22,10 @@ Properties
    ==================================== ==================================== ==================
    Property                             Tab                                  Type
    ==================================== ==================================== ==================
+   enableFrontendAuthentication_        Frontend                             boolean
+   frontendUserMustExistLocally_        Frontend                             boolean
+   reEnableFrontendUsers_               Frontend                             boolean
+   undeleteFrontendUsers_               Frontend                             boolean
    enableBackendAuthentication_         Backend                              boolean
    backendUserMustExistLocally_         Backend                              boolean
    reEnableBackendUsers_                Backend                              boolean
@@ -39,20 +43,80 @@ Properties
 
 .. ### BEGIN~OF~TABLE ###
 
-.. _admin-extensionConfiguration-properties-enableBackendAuthentication:
+.. _admin-extensionConfiguration-properties-enableFrontendAuthentication:
 
-enableBackendAuthentication
+enableFrontendAuthentication
 ---------------------------
 .. container:: table-row
 
    Property
-         enableBackendAuthentication
+         enableFrontendAuthentication
    Data type
          boolean
    Default
          :code:`false`
    Description
-         Enable OpenID Connect login for TYPO3 backend.
+         Enable OpenID Connect login for TYPO3 frontend.
+
+.. _admin-extensionConfiguration-properties-frontendUserMustExistLocally:
+
+frontendUserMustExistLocally
+---------------------------
+.. container:: table-row
+
+   Property
+         frontendUserMustExistLocally
+   Data type
+         boolean
+   Default
+         :code:`false`
+   Description
+         Allow log in for existing frontend users only.
+
+.. _admin-extensionConfiguration-properties-reEnableFrontendUsers:
+
+reEnableFrontendUsers
+--------------------
+.. container:: table-row
+
+   Property
+         reEnableFrontendUsers
+   Data type
+         boolean
+   Default
+         :code:`false`
+   Description
+         Allow log in for disabled frontend users.
+
+.. _admin-extensionConfiguration-properties-undeleteFrontendUsers:
+
+undeleteFrontendUsers
+--------------------
+.. container:: table-row
+
+   Property
+         undeleteFrontendUsers
+   Data type
+         boolean
+   Default
+         :code:`false`
+   Description
+         Allow log in for deleted frontend users.
+
+.. _admin-extensionConfiguration-properties-enableFrontendAuthentication:
+
+enableFrontendAuthentication
+---------------------------
+.. container:: table-row
+
+   Property
+         enableFrontendAuthentication
+   Data type
+         boolean
+   Default
+         :code:`false`
+   Description
+         Enable OpenID Connect login for TYPO3 frontend.
 
 .. _admin-extensionConfiguration-properties-backendUserMustExistLocally:
 
