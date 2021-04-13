@@ -58,4 +58,5 @@ Just click on "Edit me on GitHub" on the top right to submit your change request
 
    Introduction/Index
    Admin/Index
+   Editor/Index
    Sitemap
