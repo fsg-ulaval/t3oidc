@@ -48,4 +48,5 @@ Configuration
 
     ExtensionConfiguration/Index
     AccountConfiguration/Index
+    TypoScriptConfiguration/Index
 
