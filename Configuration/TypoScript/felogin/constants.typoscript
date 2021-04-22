@@ -1,9 +1,18 @@
 [extensionConfiguration('t3oidc', 'enableFrontendAuthentication')]
-  plugin.tx_felogin_login {
+  <INCLUDE_TYPOSCRIPT: source="FILE:EXT:felogin/Configuration/TypoScript/constants.typoscript" condition="isLoaded('felogin')">
+
+  # customsubcategory=07_OIDC=OpenID Connect
+  styles.content.loginform {
     view {
-      templateRootPath = EXT:t3oidc/Resources/Private/Templates
+      # cat=Frontend Login/02_Template/110; type=string; label= Path to template root (FE)
+      templateRootPath = EXT:t3oidc/Resources/Private/Templates/FeLogin/
+      # cat=Frontend Login/02_Template/111; type=string; label= Path to partial root (FE)
       partialRootPath =
+      # cat=Frontend Login/02_Template/112; type=string; label= Path to layout root (FE)
       layoutRootPath =
     }
+
+    # cat=Frontend Login/07_OIDC/400; type=boolean; label= Display login form: If set, the section in the template to display the default login form of TYPO3 is visible.
+    showLoginForm = 0
   }
 [end]

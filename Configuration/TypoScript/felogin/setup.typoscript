@@ -1,9 +1,20 @@
 [extensionConfiguration('t3oidc', 'enableFrontendAuthentication')]
+  <INCLUDE_TYPOSCRIPT: source="FILE:EXT:felogin/Configuration/TypoScript/setup.typoscript" condition="isLoaded('felogin')">
+
   plugin.tx_felogin_login {
     view {
-      templateRootPaths.1613418177 = {$plugin.tx_felogin_login.view.templateRootPath}
-      partialRootPaths.1613418177 = {$plugin.tx_felogin_login.view.partialRootPath}
-      layoutRootPaths.1613418177 = {$plugin.tx_felogin_login.view.layoutRootPath}
+      templateRootPaths.1613418177 = {$styles.content.loginform.view.templateRootPath}
+      partialRootPaths.1613418177 = {$styles.content.loginform.view.partialRootPath}
+      layoutRootPaths.1613418177 = {$styles.content.loginform.view.layoutRootPath}
+    }
+
+    settings {
+      # Storage
+      pages = {$styles.content.loginform.pid}
+
+      #Features
+      showLogoutFormAfterLogin = {$styles.content.loginform.showLogoutFormAfterLogin}
+      showLoginForm = {$styles.content.loginform.showLoginForm}
     }
   }
 [end]
