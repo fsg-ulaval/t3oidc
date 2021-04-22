@@ -46,7 +46,7 @@ Properties
 .. _admin-extensionConfiguration-properties-enableFrontendAuthentication:
 
 enableFrontendAuthentication
----------------------------
+----------------------------
 .. container:: table-row
 
    Property
@@ -61,7 +61,7 @@ enableFrontendAuthentication
 .. _admin-extensionConfiguration-properties-frontendUserMustExistLocally:
 
 frontendUserMustExistLocally
----------------------------
+----------------------------
 .. container:: table-row
 
    Property
@@ -76,7 +76,7 @@ frontendUserMustExistLocally
 .. _admin-extensionConfiguration-properties-reEnableFrontendUsers:
 
 reEnableFrontendUsers
---------------------
+---------------------
 .. container:: table-row
 
    Property
@@ -91,7 +91,7 @@ reEnableFrontendUsers
 .. _admin-extensionConfiguration-properties-undeleteFrontendUsers:
 
 undeleteFrontendUsers
---------------------
+---------------------
 .. container:: table-row
 
    Property
@@ -103,14 +103,14 @@ undeleteFrontendUsers
    Description
          Allow log in for deleted frontend users.
 
-.. _admin-extensionConfiguration-properties-enableFrontendAuthentication:
+.. _admin-extensionConfiguration-properties-enableBackendAuthentication:
 
-enableFrontendAuthentication
----------------------------
+enableBackendAuthentication
+----------------------------
 .. container:: table-row
 
    Property
-         enableFrontendAuthentication
+         enableBackendAuthentication
    Data type
          boolean
    Default
