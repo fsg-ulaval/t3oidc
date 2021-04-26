@@ -162,7 +162,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 && ($user['disable'] == 0
                     || $this->extensionConfiguration->{'isReEnable' . $context . 'Users'}())) {
                 if (!$this->updateUser($user, $userPerms)) {
-                    $this->logger->error(
+                    $this->logger->notice(
                         'User found but it was not updated!',
                         [
                             $this->db_user['userid_column']   => $user[$this->db_user['userid_column']],
@@ -237,7 +237,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      */
     protected function fetchUserIfItExists(): array
     {
-        $query = $this->queryBuilder;
+        $query = clone $this->queryBuilder;
         $query->getRestrictions()->removeAll();
         $constraint = $query->expr()->eq(
             'oidc_identifier',
@@ -289,6 +289,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
 
         $defaults = $this->getTcaDefaults();
+        $query = clone $this->queryBuilder;
         $endtime  = new DateTime('today +3 month');
 
         $preset = [
@@ -307,7 +308,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
 
         $values = array_merge($defaults, $preset);
 
-        $this->queryBuilder->insert($this->db_user['table'])->values($values)->execute();
+        $query->insert($this->db_user['table'])->values($values)->execute();
 
         return $this->fetchUserRecord($preset['oidc_identifier']);
     }
@@ -327,6 +328,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
 
         $defaults = $this->getTcaDefaults();
+        $query = clone $this->queryBuilder;
         $endtime  = new DateTime('today +3 month');
 
         $preset = [
@@ -346,7 +348,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
 
         $values = array_merge($defaults, $preset);
 
-        $this->queryBuilder->insert($this->db_user['table'])->values($values)->execute();
+        $query->insert($this->db_user['table'])->values($values)->execute();
 
         return $this->fetchUserRecord($preset['oidc_identifier']);
     }
@@ -411,24 +413,30 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     protected function updateFeUser(array &$user, array $userPerms): bool
     {
         $endtime = new DateTime('today +3 month');
-        $updated = $this->queryBuilder->update($this->db_user['table'])
-                                      ->set('usergroup', implode(',', $userPerms['groups']))
-                                      ->set('email', $this->userInfo['email'])
-                                      ->set('name', $this->userInfo['name'])
-                                      ->set('deleted', (count($userPerms['groups'])?'0':'1'), true, PDO::PARAM_INT)
-                                      ->set('disable', '0', true, PDO::PARAM_INT)
-                                      ->set('starttime', '0', true, PDO::PARAM_INT)
-                                      ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
-                                      ->where(
-                                          $this->queryBuilder->expr()->eq(
-                                              'uid',
-                                              $this->queryBuilder->createNamedParameter(
-                                                  $user['uid'],
-                                                  PDO::PARAM_INT
-                                              )
-                                          )
-                                      )
-                                      ->execute() ? true : false;
+        $query   = clone $this->queryBuilder;
+        $updated = (bool)$query->update($this->db_user['table'])
+                               ->set('usergroup', implode(',', $userPerms['groups']))
+                               ->set('email', $this->userInfo['email'])
+                               ->set('name', $this->userInfo['name'])
+                               ->set(
+                                   'deleted',
+                                   (count($userPerms['groups']) ? '0' : '1'),
+                                   true,
+                                   PDO::PARAM_INT
+                               )
+                               ->set('disable', '0', true, PDO::PARAM_INT)
+                               ->set('starttime', '0', true, PDO::PARAM_INT)
+                               ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                               ->where(
+                                   $query->expr()->eq(
+                                       'uid',
+                                       $query->createNamedParameter(
+                                           $user['uid'],
+                                           PDO::PARAM_INT
+                                       )
+                                   )
+                               )
+                               ->execute();
 
         if ($updated) {
             $user['usergroup'] = implode(',', $userPerms['groups']);
@@ -454,30 +462,31 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     protected function updateBeUser(array &$user, array $userPerms): bool
     {
         $endtime = new DateTime('today +3 month');
-        $updated = $this->queryBuilder->update($this->db_user['table'])
-                                      ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
-                                      ->set('usergroup', implode(',', $userPerms['groups']))
-                                      ->set('email', $this->userInfo['email'])
-                                      ->set('realName', $this->userInfo['name'])
-                                      ->set(
-                                          'deleted',
-                                          (($userPerms['isAdmin'] || count($userPerms['groups']))?'0':'1'),
-                                          true,
-                                          PDO::PARAM_INT
-                                      )
-                                      ->set('disable', '0', true, PDO::PARAM_INT)
-                                      ->set('starttime', '0', true, PDO::PARAM_INT)
-                                      ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
-                                      ->where(
-                                          $this->queryBuilder->expr()->eq(
-                                              'uid',
-                                              $this->queryBuilder->createNamedParameter(
-                                                  $user['uid'],
-                                                  PDO::PARAM_INT
-                                              )
-                                          )
-                                      )
-                                      ->execute() ? true : false;
+        $query   = clone $this->queryBuilder;
+        $updated = (bool)$query->update($this->db_user['table'])
+                               ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
+                               ->set('usergroup', implode(',', $userPerms['groups']))
+                               ->set('email', $this->userInfo['email'])
+                               ->set('realName', $this->userInfo['name'])
+                               ->set(
+                                   'deleted',
+                                   (($userPerms['isAdmin'] || count($userPerms['groups'])) ? '0' : '1'),
+                                   true,
+                                   PDO::PARAM_INT
+                               )
+                               ->set('disable', '0', true, PDO::PARAM_INT)
+                               ->set('starttime', '0', true, PDO::PARAM_INT)
+                               ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                               ->where(
+                                   $query->expr()->eq(
+                                       'uid',
+                                       $query->createNamedParameter(
+                                           $user['uid'],
+                                           PDO::PARAM_INT
+                                       )
+                                   )
+                               )
+                               ->execute();
 
         if ($updated) {
             $user['admin']     = $userPerms['isAdmin'];
@@ -638,6 +647,6 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $beUser       = clone $GLOBALS['BE_USER'];
         $beUser->user = $user;
         $beUser->fetchGroupData();
-        return ($beUser->getDefaultWorkspace() >= 0) ?: false;
+        return $beUser->getDefaultWorkspace() >= 0;
     }
 }
