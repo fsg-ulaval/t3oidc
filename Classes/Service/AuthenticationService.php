@@ -50,17 +50,17 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * @var Session<mixed>
      */
-    private Session $session;
+    protected Session $session;
 
     /**
      * @var array<string, mixed>
      */
-    private array $userInfo = [];
+    protected array $userInfo = [];
 
     /**
      * @var QueryBuilder
      */
-    private QueryBuilder $queryBuilder;
+    protected QueryBuilder $queryBuilder;
 
     /**
      * AuthenticationService constructor.
