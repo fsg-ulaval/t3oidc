@@ -42,8 +42,8 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
     use LoggerAwareTrait;
 
     const PATH         = '/oidc/callback';
-    const BACKEND_URI  = '%s/typo3/?loginProvider=%d&code=%s&state=%s';
-    const FRONTEND_URI = '%s%slogintype=login&code=%s&state=%s';
+    const BACKEND_URI  = '%s/typo3/?loginProvider=%d';
+    const FRONTEND_URI = '%s%slogintype=login';
 
     /**
      * @param ServerRequestInterface  $request
@@ -150,9 +150,7 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
         return sprintf(
             self::BACKEND_URI,
             GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'),
-            OpenIDConnectSignInProvider::LOGIN_PROVIDER,
-            $queryParams['code'],
-            $queryParams['state']
+            OpenIDConnectSignInProvider::LOGIN_PROVIDER
         );
     }
 
@@ -169,9 +167,7 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
         return sprintf(
             self::FRONTEND_URI,
             $referrer,
-            $glue,
-            $queryParams['code'],
-            $queryParams['state']
+            $glue
         );
     }
 }
