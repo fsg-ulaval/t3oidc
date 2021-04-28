@@ -32,10 +32,16 @@ use TYPO3\CMS\Core\Crypto\Random;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Http\ServerRequestFactory;
+use TYPO3\CMS\Core\Routing\SiteMatcher;
 use TYPO3\CMS\Core\SysLog\Action\Login as SystemLogLoginAction;
 use TYPO3\CMS\Core\SysLog\Error as SystemLogErrorClassification;
 use TYPO3\CMS\Core\SysLog\Type as SystemLogType;
+use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\RootlineUtility;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * OpenID Connect authentication service.
@@ -90,6 +96,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                  && GeneralUtility::_GP('loginProvider')
                     == OpenIDConnectSignInProvider::LOGIN_PROVIDER))
             && $this->initializeUserInfo()) {
+            $this->initialize();
             $this->login['status']      = 'login';
             $this->login['responsible'] = true;
             $this->handleLogin();
@@ -97,7 +104,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     }
 
     /**
-     * Initializes UserInfo if session exists
+     * Initialize UserInfo if session exists
      */
     protected function initializeUserInfo(): bool
     {
@@ -107,6 +114,47 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
 
         return false;
+    }
+
+    /**
+     * Initialize Service
+     */
+    protected function initialize(): void
+    {
+        $request     = ServerRequestFactory::fromGlobals();
+        $matcher     = GeneralUtility::makeInstance(SiteMatcher::class);
+        $routeResult = $matcher->matchRequest(ServerRequestFactory::fromGlobals());
+        $site        = $routeResult->getSite();
+
+        if ($this->authInfo['loginType'] == 'FE') {
+            $pageArguments = $site->getRouter()->matchRequest($request, $routeResult);
+        }
+
+        $tsfe = GeneralUtility::makeInstance(
+            TypoScriptFrontendController::class,
+            null,
+            $site,
+            $routeResult->getLanguage(),
+            $pageArguments ?? null,
+            GeneralUtility::makeInstance(FrontendUserAuthentication::class)
+        );
+
+        $templateService = GeneralUtility::makeInstance(TemplateService::class, null, null, $tsfe);
+        $rootLine        = GeneralUtility::makeInstance(
+            RootlineUtility::class,
+            $tsfe->getPageArguments()->getPageId()
+        )->get();
+        $templateService->start($rootLine);
+
+        if ($this->authInfo['loginType'] == 'FE'
+            && !empty($settings = $templateService->setup['plugin.']['tx_felogin_login.']['settings.'])) {
+            // List of page IDs where to look for frontend user records
+            if ($pids = $settings['pages']) {
+                $tsfe->fe_user->checkPid_value = implode(',', GeneralUtility::intExplode(',', $pids));
+                $this->authInfo                = $tsfe->fe_user->getAuthInfoArray();
+                $this->db_user                 = $this->authInfo['db_user'];
+            }
+        }
     }
 
     /**
@@ -289,7 +337,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
 
         $defaults = $this->getTcaDefaults();
-        $query = clone $this->queryBuilder;
+        $query    = clone $this->queryBuilder;
         $endtime  = new DateTime('today +3 month');
 
         $preset = [
@@ -303,46 +351,6 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             'usergroup'       => implode(',', $userPerms['groups']),
             'name'            => $this->userInfo['name'] ?? '',
             'email'           => $this->userInfo['email'] ?? '',
-            'oidc_identifier' => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
-        ];
-
-        $values = array_merge($defaults, $preset);
-
-        $query->insert($this->db_user['table'])->values($values)->execute();
-
-        return $this->fetchUserRecord($preset['oidc_identifier']);
-    }
-
-    /**
-     * Inserts a new backend user
-     *
-     * @param array<string, mixed> $userPerms
-     *
-     * @return array<string, mixed>
-     * @throws InvalidPasswordHashException
-     */
-    public function insertBeUser(array $userPerms): array
-    {
-        if (empty($userPerms['groups']) && !$userPerms['isAdmin']) {
-            return [];
-        }
-
-        $defaults = $this->getTcaDefaults();
-        $query = clone $this->queryBuilder;
-        $endtime  = new DateTime('today +3 month');
-
-        $preset = [
-            'pid'             => 0,
-            'tstamp'          => time(),
-            'crdate'          => time(),
-            'disable'         => 0,
-            'endtime'         => $endtime->getTimestamp(),
-            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
-            'password'        => $this->getPassword(),
-            'admin'           => ($userPerms['isAdmin'] ? 1 : 0),
-            'usergroup'       => implode(',', $userPerms['groups']),
-            'email'           => $this->userInfo['email'] ?? '',
-            'realName'        => $this->userInfo['name'] ?? '',
             'oidc_identifier' => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
         ];
 
@@ -379,6 +387,46 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $password    = GeneralUtility::makeInstance(Random::class)->generateRandomHexString(50);
 
         return $saltFactory->getHashedPassword($password);
+    }
+
+    /**
+     * Inserts a new backend user
+     *
+     * @param array<string, mixed> $userPerms
+     *
+     * @return array<string, mixed>
+     * @throws InvalidPasswordHashException
+     */
+    public function insertBeUser(array $userPerms): array
+    {
+        if (empty($userPerms['groups']) && !$userPerms['isAdmin']) {
+            return [];
+        }
+
+        $defaults = $this->getTcaDefaults();
+        $query    = clone $this->queryBuilder;
+        $endtime  = new DateTime('today +3 month');
+
+        $preset = [
+            'pid'             => 0,
+            'tstamp'          => time(),
+            'crdate'          => time(),
+            'disable'         => 0,
+            'endtime'         => $endtime->getTimestamp(),
+            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+            'password'        => $this->getPassword(),
+            'admin'           => ($userPerms['isAdmin'] ? 1 : 0),
+            'usergroup'       => implode(',', $userPerms['groups']),
+            'email'           => $this->userInfo['email'] ?? '',
+            'realName'        => $this->userInfo['name'] ?? '',
+            'oidc_identifier' => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+        ];
+
+        $values = array_merge($defaults, $preset);
+
+        $query->insert($this->db_user['table'])->values($values)->execute();
+
+        return $this->fetchUserRecord($preset['oidc_identifier']);
     }
 
     /**

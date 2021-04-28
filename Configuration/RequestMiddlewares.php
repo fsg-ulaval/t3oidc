@@ -7,10 +7,9 @@ return [
         'fsg/oidc/authentication' => [
             'target' => \FSG\Oidc\Middleware\AuthenticationMiddleware::class,
             'after' => [
-                'typo3/cms-frontend/authentication',
             ],
             'before' => [
-                'fsg/oidc/callback',
+                'typo3/cms-frontend/authentication',
             ],
         ],
         'fsg/oidc/callback' => [
@@ -21,6 +20,6 @@ return [
             'before' => [
                 'typo3/cms-frontend/base-redirect-resolver',
             ],
-        ]
+        ],
     ],
 ];
