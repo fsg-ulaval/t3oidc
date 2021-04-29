@@ -437,6 +437,13 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
      */
     protected function updateUser(array &$user, array $userPerms): bool
     {
+        $context = $this->authInfo['loginType'] == 'BE' ? 'Backend' : 'Frontend';
+        // If the user must exist locally and no role is defined on the authentication server, keep the local assignments.
+        if ($this->extensionConfiguration->{'is' . $context . 'UserMustExistLocally'}()
+            && empty($userPerms['groups'])) {
+            $userPerms['groups'] = explode(',', $user['usergroup']);
+        }
+
         switch ($this->db_user['table']) {
             case 'fe_users':
                 $updated = $this->updateFeUser($user, $userPerms);
@@ -466,12 +473,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->set('usergroup', implode(',', $userPerms['groups']))
                                ->set('email', $this->userInfo['email'])
                                ->set('name', $this->userInfo['name'])
-                               ->set(
-                                   'deleted',
-                                   (count($userPerms['groups']) ? '0' : '1'),
-                                   true,
-                                   PDO::PARAM_INT
-                               )
+                               ->set('deleted', (count($userPerms['groups']) ? '0' : '1'), true, PDO::PARAM_INT)
                                ->set('disable', '0', true, PDO::PARAM_INT)
                                ->set('starttime', '0', true, PDO::PARAM_INT)
                                ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
@@ -664,11 +666,11 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 [$user[$this->db_user['username_column']], $user['lockToDomain'], $queriedDomain]
             );
             $this->logger->info(sprintf(
-                $errorMessage,
-                $user[$this->db_user['username_column']],
-                $user['lockToDomain'],
-                $queriedDomain
-            ));
+                                    $errorMessage,
+                                    $user[$this->db_user['username_column']],
+                                    $user['lockToDomain'],
+                                    $queriedDomain
+                                ));
             // Responsible, authentication ok, but domain lock not ok, do NOT check other services
             $this->session->set(
                 't3oidcOAuthUserAccessDenied',
