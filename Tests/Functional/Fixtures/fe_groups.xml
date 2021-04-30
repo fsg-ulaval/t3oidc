@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dataset>
+    <fe_groups>
+        <uid>4</uid>
+        <pid>0</pid>
+        <title>User</title>
+        <deleted>0</deleted>
+        <oidc_identifier>user</oidc_identifier>
+    </fe_groups>
+</dataset>

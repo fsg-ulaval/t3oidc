@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="EXT:t3oidc/Resources/Private/Language/locallang_csh"
+		  date="2021-02-17T15:20:34Z" product-name="t3oidc">
+		<header/>
+		<body>
+			<trans-unit id="oidc_identifier.description" resname="oidc_identifier.description">
+				<source>OpenID Connect identifier</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

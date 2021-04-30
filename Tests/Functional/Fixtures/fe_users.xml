@@ -1,123 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <dataset>
-    <be_users>
+    <fe_users>
         <uid>1</uid>
         <pid>0</pid>
         <tstamp>1366642540</tstamp>
-        <username>admin</username>
+        <username>user</username>
         <password>$1$tCrlLajZ$C0sikFQQ3SWaFAZ1Me0Z/1</password> <!-- password -->
-        <admin>1</admin>
         <disable>0</disable>
         <starttime>0</starttime>
         <endtime>0</endtime>
-        <options>0</options>
         <crdate>1366642540</crdate>
         <cruser_id>0</cruser_id>
-        <workspace_perms>1</workspace_perms>
-        <disableIPlock>1</disableIPlock>
         <deleted>0</deleted>
         <TSconfig>NULL</TSconfig>
         <lastlogin>1371033743</lastlogin>
-        <createdByAction>0</createdByAction>
-        <workspace_id>0</workspace_id>
         <oidc_identifier>Foo</oidc_identifier>
-        <realName>Foo FOO</realName>
+        <name>Foo FOO</name>
         <email>foo@foo.com</email>
-    </be_users>
-    <be_users>
+    </fe_users>
+    <fe_users>
         <uid>2</uid>
         <pid>0</pid>
         <tstamp>1366642540</tstamp>
-        <username>editor</username>
+        <username>user</username>
         <password>$1$tCrlLajZ$C0sikFQQ3SWaFAZ1Me0Z/1</password> <!-- password -->
-        <admin>0</admin>
         <disable>0</disable>
         <starttime>0</starttime>
         <endtime>0</endtime>
-        <options>3</options>
         <crdate>1366642540</crdate>
         <cruser_id>0</cruser_id>
-        <workspace_perms>1</workspace_perms>
-        <disableIPlock>1</disableIPlock>
         <deleted>1</deleted>
         <TSconfig>NULL</TSconfig>
         <lastlogin>1371033743</lastlogin>
-        <createdByAction>0</createdByAction>
-        <workspace_id>0</workspace_id>
         <usergroup>1</usergroup>
         <oidc_identifier>Bar</oidc_identifier>
-        <realName>Bar BAR</realName>
-    </be_users>
-    <be_users>
+        <name>Bar BAR</name>
+    </fe_users>
+    <fe_users>
         <uid>3</uid>
         <pid>0</pid>
         <tstamp>1366642540</tstamp>
-        <username>editor</username>
+        <username>user</username>
         <password>$1$tCrlLajZ$C0sikFQQ3SWaFAZ1Me0Z/1</password> <!-- password -->
-        <admin>0</admin>
         <disable>1</disable>
         <starttime>0</starttime>
         <endtime>0</endtime>
-        <options>3</options>
         <crdate>1366642540</crdate>
         <cruser_id>0</cruser_id>
-        <workspace_perms>1</workspace_perms>
-        <disableIPlock>1</disableIPlock>
         <deleted>0</deleted>
         <TSconfig>NULL</TSconfig>
         <lastlogin>1371033743</lastlogin>
-        <createdByAction>0</createdByAction>
-        <workspace_id>0</workspace_id>
         <usergroup>1</usergroup>
         <oidc_identifier>FooBar</oidc_identifier>
-        <realName>Foo BAR</realName>
-    </be_users>
-    <be_users>
+        <name>Foo BAR</name>
+    </fe_users>
+    <fe_users>
         <uid>4</uid>
         <pid>0</pid>
         <tstamp>1366642540</tstamp>
-        <username>editor</username>
+        <username>user</username>
         <password>$1$tCrlLajZ$C0sikFQQ3SWaFAZ1Me0Z/1</password> <!-- password -->
-        <admin>0</admin>
         <disable>1</disable>
         <starttime>0</starttime>
         <endtime>0</endtime>
-        <options>3</options>
         <crdate>1366642540</crdate>
         <cruser_id>0</cruser_id>
-        <workspace_perms>1</workspace_perms>
-        <disableIPlock>1</disableIPlock>
         <deleted>1</deleted>
         <TSconfig>NULL</TSconfig>
         <lastlogin>1371033743</lastlogin>
-        <createdByAction>0</createdByAction>
-        <workspace_id>0</workspace_id>
         <usergroup>1</usergroup>
         <oidc_identifier>BarFoo</oidc_identifier>
-        <realName>Bar FOO</realName>
-    </be_users>
-    <be_users>
+        <name>Bar FOO</name>
+    </fe_users>
+    <fe_users>
         <uid>5</uid>
         <pid>0</pid>
         <tstamp>1366642540</tstamp>
-        <username>editor</username>
+        <username>user</username>
         <password>$1$tCrlLajZ$C0sikFQQ3SWaFAZ1Me0Z/1</password> <!-- password -->
-        <admin>0</admin>
         <disable>0</disable>
         <starttime>0</starttime>
         <endtime>0</endtime>
-        <options>3</options>
         <crdate>1366642540</crdate>
         <cruser_id>0</cruser_id>
-        <workspace_perms>1</workspace_perms>
-        <disableIPlock>1</disableIPlock>
         <deleted>0</deleted>
         <TSconfig>NULL</TSconfig>
         <lastlogin>1371033743</lastlogin>
-        <createdByAction>0</createdByAction>
-        <workspace_id>0</workspace_id>
         <usergroup></usergroup>
         <oidc_identifier>FooFooFoo</oidc_identifier>
-        <realName>Foo FOOFOO</realName>
-    </be_users>
+        <name>Foo FOOFOO</name>
+    </fe_users>
 </dataset>

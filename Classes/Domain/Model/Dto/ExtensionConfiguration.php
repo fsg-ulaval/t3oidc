@@ -63,6 +63,26 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
+    protected bool $enableFrontendAuthentication = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $frontendUserMustExistLocally = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $reEnableFrontendUsers = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $undeleteFrontendUsers = false;
+
+    /**
+     * @var bool
+     */
     protected bool $enableBackendAuthentication = false;
 
     /**
@@ -78,7 +98,12 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
-    protected bool $unDeleteBackendUsers = false;
+    protected bool $undeleteBackendUsers = false;
+
+    /**
+     * @var string
+     */
+    protected string $roleAdmin = '';
 
     /**
      * @var string
@@ -160,6 +185,38 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @return bool
      */
+    public function isEnableFrontendAuthentication(): bool
+    {
+        return $this->enableFrontendAuthentication;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFrontendUserMustExistLocally(): bool
+    {
+        return $this->frontendUserMustExistLocally;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isReEnableFrontendUsers(): bool
+    {
+        return $this->reEnableFrontendUsers;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUndeleteFrontendUsers(): bool
+    {
+        return $this->undeleteFrontendUsers;
+    }
+
+    /**
+     * @return bool
+     */
     public function isEnableBackendAuthentication(): bool
     {
         return $this->enableBackendAuthentication;
@@ -184,9 +241,17 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @return bool
      */
-    public function isUnDeleteBackendUsers(): bool
+    public function isUndeleteBackendUsers(): bool
     {
-        return $this->unDeleteBackendUsers;
+        return $this->undeleteBackendUsers;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRoleAdmin(): string
+    {
+        return $this->roleAdmin;
     }
 
     /**

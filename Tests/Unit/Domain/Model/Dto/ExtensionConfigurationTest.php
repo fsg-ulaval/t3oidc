@@ -19,18 +19,23 @@ class ExtensionConfigurationTest extends UnitTestCase
     public function defaultSettingsCanBeRead(): void
     {
         $settings = [
-            'clientId'                    => '',
-            'clientSecret'                => '',
-            'clientScopes'                => '',
-            'endpointAuthorize'           => '',
-            'endpointToken'               => '',
-            'endpointUserInfo'            => '',
-            'endpointLogout'              => '',
-            'tokenUserIdentifier'         => '',
-            'enableBackendAuthentication' => false,
-            'backendUserMustExistLocally' => false,
-            'reEnableBackendUsers'        => false,
-            'unDeleteBackendUsers'        => false,
+            'clientId'                     => '',
+            'clientSecret'                 => '',
+            'clientScopes'                 => '',
+            'endpointAuthorize'            => '',
+            'endpointToken'                => '',
+            'endpointUserInfo'             => '',
+            'endpointLogout'               => '',
+            'tokenUserIdentifier'          => '',
+            'enableFrontendAuthentication' => false,
+            'frontendUserMustExistLocally' => false,
+            'reEnableFrontendUsers'        => false,
+            'undeleteFrontendUsers'        => false,
+            'enableBackendAuthentication'  => false,
+            'backendUserMustExistLocally'  => false,
+            'reEnableBackendUsers'         => false,
+            'undeleteBackendUsers'         => false,
+            'roleAdmin'                    => '',
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
@@ -48,18 +53,23 @@ class ExtensionConfigurationTest extends UnitTestCase
     public function settingsCanBeRead(): void
     {
         $settings = [
-            'clientId'                    => 'foo',
-            'clientSecret'                => 'bar',
-            'clientScopes'                => 'foo',
-            'endpointAuthorize'           => 'bar',
-            'endpointToken'               => 'foo',
-            'endpointUserInfo'            => 'bar',
-            'endpointLogout'              => 'foo',
-            'tokenUserIdentifier'         => 'bar',
-            'enableBackendAuthentication' => true,
-            'backendUserMustExistLocally' => true,
-            'reEnableBackendUsers'        => true,
-            'unDeleteBackendUsers'        => true,
+            'clientId'                     => 'foo',
+            'clientSecret'                 => 'bar',
+            'clientScopes'                 => 'foo',
+            'endpointAuthorize'            => 'bar',
+            'endpointToken'                => 'foo',
+            'endpointUserInfo'             => 'bar',
+            'endpointLogout'               => 'foo',
+            'tokenUserIdentifier'          => 'bar',
+            'enableFrontendAuthentication' => true,
+            'frontendUserMustExistLocally' => true,
+            'reEnableFrontendUsers'        => true,
+            'undeleteFrontendUsers'        => true,
+            'enableBackendAuthentication'  => true,
+            'backendUserMustExistLocally'  => true,
+            'reEnableBackendUsers'         => true,
+            'undeleteBackendUsers'         => true,
+            'roleAdmin'                    => 'foo',
         ];
 
         $configurationInstance = $this->getAccessibleMock(ExtensionConfiguration::class, ['dummy'], [], '', false);
