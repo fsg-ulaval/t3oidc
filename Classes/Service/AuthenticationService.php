@@ -636,6 +636,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             );
             return 0;
         }
+        if ($this->authInfo['loginType'] == 'FE' && empty($user['usergroup'])) {
+            // Responsible, authentication ok, but user has no usergroup defined
+            return 0;
+        }
 
         $queriedDomain   = $this->authInfo['HTTP_HOST'];
         $isDomainLockMet = false;
@@ -666,11 +670,11 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 [$user[$this->db_user['username_column']], $user['lockToDomain'], $queriedDomain]
             );
             $this->logger->info(sprintf(
-                                    $errorMessage,
-                                    $user[$this->db_user['username_column']],
-                                    $user['lockToDomain'],
-                                    $queriedDomain
-                                ));
+                $errorMessage,
+                $user[$this->db_user['username_column']],
+                $user['lockToDomain'],
+                $queriedDomain
+            ));
             // Responsible, authentication ok, but domain lock not ok, do NOT check other services
             $this->session->set(
                 't3oidcOAuthUserAccessDenied',
