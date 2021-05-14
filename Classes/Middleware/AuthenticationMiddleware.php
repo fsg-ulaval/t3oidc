@@ -38,8 +38,9 @@ class AuthenticationMiddleware implements MiddlewareInterface, LoggerAwareInterf
     use AuthenticationTrait;
     use LoggerAwareTrait;
 
-    const PATH        = '/oidc/authentication';
-    const BACKEND_URI = '%s/typo3/?loginProvider=%d';
+    const PATH         = '/oidc/authentication';
+    const BACKEND_URI  = '%s/typo3/?loginProvider=%d';
+    const FRONTEND_URI = '%s://%s%s%slogintype=%s';
 
     /**
      * @param ServerRequestInterface  $request
@@ -49,53 +50,94 @@ class AuthenticationMiddleware implements MiddlewareInterface, LoggerAwareInterf
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (strpos($request->getUri()->getPath(), self::PATH) === false) {
-            // Middleware is not responsible for given request
+        if (parse_url($request->getServerParams()['HTTP_REFERER'] ?? '', PHP_URL_HOST)
+            !== parse_url(GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'), PHP_URL_HOST)) {
             return $handler->handle($request);
         }
+        if (strpos($request->getUri()->getPath(), self::PATH) === false) {
+            $response = $handler->handle($request);
+            return $this->handle($request, false) ?? $response;
+        }
 
-        return $this->handleCallback($request);
+        return $this->handle($request);
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @param bool                   $responsible
+     *
+     * @return ?RedirectResponse
+     */
+    protected function handle(ServerRequestInterface $request, bool $responsible = true): ?ResponseInterface
+    {
+        if (!$responsible || $request->getQueryParams()['action'] === LoginType::LOGOUT) {
+            return $this->handleLogout($request);
+        }
+
+        $this->logger->debug('Handle login.');
+        $this->initReferrer($request, LoginType::LOGIN);
+        return new RedirectResponse($this->authenticateUser(), 302);
     }
 
     /**
      * @param ServerRequestInterface $request
      *
-     * @return RedirectResponse
+     * @return ?RedirectResponse
      */
-    protected function handleCallback(ServerRequestInterface $request): RedirectResponse
+    protected function handleLogout(ServerRequestInterface $request): ?ResponseInterface
     {
-        $uri      = new Uri($request->getServerParams()['HTTP_REFERER']);
-        $referrer = sprintf('%s://%s%s', $uri->getScheme(), $uri->getHost(), $uri->getPath());
-
-        $queryParams = $request->getQueryParams();
-        if ($queryParams['action'] === LoginType::LOGOUT) {
-            // Logout user
-            $this->logger->debug('Logout user.');
-
-            if ($this->session->has('t3oidcOAuthUser')) {
-                $this->session->remove('t3oidcOAuthUser');
+        if ($request->getParsedBody()['logintype'] === LoginType::LOGOUT
+            || $request->getQueryParams()['logintype'] === LoginType::LOGOUT
+            || trim($request->getQueryParams()['route'] ?? '', '/') === LoginType::LOGOUT) {
+            $context = $this->environmentService->isEnvironmentInBackendMode() ? 'Backend' : 'Frontend';
+            if (!$this->extensionConfiguration->{'isSoftLogout' . $context . 'Users'}()) {
+                $this->logger->debug('Handle ' . $context . ' soft logout.');
+                $this->initReferrer($request, LoginType::LOGOUT);
+                return new RedirectResponse($this->logoutUser(), 302);
             }
-
-            if (preg_match('/\/typo3($|\/)/', $uri->getPath())) {
-                $redirectUri = sprintf(
-                    self::BACKEND_URI,
-                    GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'),
-                    OpenIDConnectSignInProvider::LOGIN_PROVIDER
-                );
-            } else {
-                $redirectUri = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
-            }
-        } else {
-            // Login user to authentication service
-            $this->logger->debug('Handle login.');
-            $redirectUri = $this->authenticateUser();
-            if ($this->session->has('t3oidcOAuthReferrer')) {
-                $this->session->replace(['t3oidcOAuthReferrer' => $referrer]);
-            } else {
-                $this->session->set('t3oidcOAuthReferrer', $referrer);
-            }
+        } elseif ($request->getQueryParams()['action'] === LoginType::LOGOUT) {
+            $this->logger->debug('Handle logout.');
+            $this->initReferrer($request, LoginType::LOGOUT);
+            return new RedirectResponse($this->logoutUser(), 302);
         }
 
-        return new RedirectResponse($redirectUri, 302);
+        return null;
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @param string                 $loginType
+     */
+    protected function initReferrer(ServerRequestInterface $request, string $loginType): void
+    {
+        if ($this->environmentService->isEnvironmentInBackendMode()) {
+            $referrer = sprintf(
+                self::BACKEND_URI,
+                GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'),
+                OpenIDConnectSignInProvider::LOGIN_PROVIDER
+            );
+        } else {
+            $rawReferrer = $request->getServerParams()['HTTP_REFERER'];
+            $uri         = $rawReferrer ? new Uri($rawReferrer) : $request->getUri();
+            parse_str($uri->getQuery(), $queryParams);
+            unset($queryParams['logintype']);
+
+            $query    = http_build_query($queryParams);
+            $query    = $query ? '?' . $query . '&' : '?';
+            $referrer = sprintf(
+                self::FRONTEND_URI,
+                $uri->getScheme(),
+                $uri->getHost(),
+                $uri->getPath(),
+                $query,
+                $loginType
+            );
+        }
+
+        if ($this->session->has('t3oidcOAuthReferrer')) {
+            $this->session->replace(['t3oidcOAuthReferrer' => $referrer]);
+        } else {
+            $this->session->set('t3oidcOAuthReferrer', $referrer);
+        }
     }
 }

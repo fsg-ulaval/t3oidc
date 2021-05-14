@@ -24,6 +24,7 @@ use League\OAuth2\Client\Token\AccessToken;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Session\Session;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Service\EnvironmentService;
 
 trait AuthenticationTrait
 {
@@ -32,6 +33,11 @@ trait AuthenticationTrait
      * @var ExtensionConfiguration
      */
     protected ExtensionConfiguration $extensionConfiguration;
+
+    /**
+     * @var EnvironmentService
+     */
+    protected EnvironmentService $environmentService;
 
     /**
      * @var GenericProvider
@@ -49,11 +55,12 @@ trait AuthenticationTrait
     public function __construct()
     {
         $this->extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
+        $this->environmentService     = GeneralUtility::makeInstance(EnvironmentService::class);
         $this->session                = new Session();
     }
 
     /**
-     * Initialize local session and redirect to the authentication service if user attempt to log in the backend.
+     * Initialize local session and return the url of the authentication service login endpoint.
      *
      * @return string
      */
@@ -68,6 +75,24 @@ trait AuthenticationTrait
         }
 
         return $authorizationUrl;
+    }
+
+    /**
+     * Remove local session and return the url of the authentication service logout endpoint.
+     *
+     * @return string
+     */
+    protected function logoutUser(): string
+    {
+        $logoutUrl = $this->extensionConfiguration->getEndpointLogout()
+                     . '?post_logout_redirect_uri='
+                     . $this->getCallbackUrl();
+
+        if ($this->session->has('t3oidcOAuthUser')) {
+            $this->session->remove('t3oidcOAuthUser');
+        }
+
+        return $logoutUrl;
     }
 
     /**

@@ -83,6 +83,11 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @var bool
      */
+    protected bool $softLogoutFrontendUsers = true;
+
+    /**
+     * @var bool
+     */
     protected bool $enableBackendAuthentication = false;
 
     /**
@@ -99,6 +104,11 @@ class ExtensionConfiguration implements SingletonInterface
      * @var bool
      */
     protected bool $undeleteBackendUsers = false;
+
+    /**
+     * @var bool
+     */
+    protected bool $softLogoutBackendUsers = true;
 
     /**
      * @var string
@@ -217,6 +227,14 @@ class ExtensionConfiguration implements SingletonInterface
     /**
      * @return bool
      */
+    public function isSoftLogoutFrontendUsers(): bool
+    {
+        return $this->softLogoutFrontendUsers;
+    }
+
+    /**
+     * @return bool
+     */
     public function isEnableBackendAuthentication(): bool
     {
         return $this->enableBackendAuthentication;
@@ -244,6 +262,14 @@ class ExtensionConfiguration implements SingletonInterface
     public function isUndeleteBackendUsers(): bool
     {
         return $this->undeleteBackendUsers;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSoftLogoutBackendUsers(): bool
+    {
+        return $this->softLogoutBackendUsers;
     }
 
     /**

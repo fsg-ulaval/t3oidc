@@ -15,6 +15,9 @@ reEnableFrontendUsers = 0
 # cat=frontend/enable/4; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:undeleteFrontendUsers
 undeleteFrontendUsers = 0
 
+# cat=frontend/enable/5; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:softLogoutFrontendUsers
+softLogoutFrontendUsers = 1
+
 # cat=backend/enable/1; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:enableBackendAuthentication
 enableBackendAuthentication = 0
 
@@ -26,6 +29,9 @@ reEnableBackendUsers = 0
 
 # cat=backend/enable/4; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:undeleteBackendUsers
 undeleteBackendUsers = 0
+
+# cat=backend/enable/5; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:softLogoutBackendUsers
+softLogoutBackendUsers = 1
 
 # cat=backend/role/1; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:role.admin
 roleAdmin =

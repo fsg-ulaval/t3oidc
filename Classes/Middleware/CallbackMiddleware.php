@@ -43,7 +43,7 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
 
     const PATH         = '/oidc/callback';
     const BACKEND_URI  = '%s/typo3/?loginProvider=%d';
-    const FRONTEND_URI = '%s%slogintype=login';
+    const FRONTEND_URI = '%s://%s%s%s';
 
     /**
      * @param ServerRequestInterface  $request
@@ -80,9 +80,9 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
 
             $uri = new Uri($this->session->get('t3oidcOAuthReferrer'));
             if (preg_match('/\/typo3($|\/)/', $uri->getPath())) {
-                $redirectUri = $this->getBackendUri($queryParams);
+                $redirectUri = $this->getBackendUri();
             } else {
-                $redirectUri = $this->getFrontendUri($queryParams);
+                $redirectUri = $this->getFrontendUri($uri);
             }
 
             if (!empty($queryParams['code']) && !empty($queryParams['state'])) {
@@ -124,29 +124,28 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
             }
         } catch (InvalidStateException | IdentityProviderException $e) {
             $this->logger->error(sprintf('Error %s: %s', $e->getCode(), $e->getMessage()));
-            $redirectUri .= '&handlingError=1';
+            $redirectUri .= (strpos($redirectUri, '?') !== false ? '&' : '?') . 'handlingError=1';
         }
 
         // Add error parameters to frontend uri if exists
         if (!empty($queryParams['error']) && !empty($queryParams['error_description'])) {
-            $redirectUri .= sprintf(
-                '&error=%s&error_description=%s',
-                $queryParams['error'],
-                $queryParams['error_description']
-            );
+            $redirectUri .= (strpos($redirectUri, '?') !== false ? '&' : '?')
+                            . sprintf(
+                                'error=%s&error_description=%s',
+                                $queryParams['error'],
+                                $queryParams['error_description']
+                            );
         }
 
         return new RedirectResponse($redirectUri, 302);
     }
 
     /**
-     * @param array<string, string> $queryParams
-     *
      * @return string
      */
-    protected function getBackendUri(array $queryParams): string
+    protected function getBackendUri(): string
     {
-        $this->session->remove('t3oidcOAuthReferrer');
+        // $this->session->remove('t3oidcOAuthReferrer');
         return sprintf(
             self::BACKEND_URI,
             GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'),
@@ -155,19 +154,14 @@ class CallbackMiddleware implements MiddlewareInterface, LoggerAwareInterface
     }
 
     /**
-     * @param array<string, string> $queryParams
+     * @param Uri $uri
      *
      * @return string
      */
-    protected function getFrontendUri(array $queryParams): string
+    protected function getFrontendUri(Uri $uri): string
     {
-        $referrer = $this->session->get('t3oidcOAuthReferrer');
-        $this->session->remove('t3oidcOAuthReferrer');
-        $glue = preg_match('/\?/', $referrer) ? '&' : '?';
-        return sprintf(
-            self::FRONTEND_URI,
-            $referrer,
-            $glue
-        );
+        // $this->session->remove('t3oidcOAuthReferrer');
+        $query = $uri->getQuery() ? '?' . $uri->getQuery() : '';
+        return sprintf(self::FRONTEND_URI, $uri->getScheme(), $uri->getHost(), $uri->getPath(), $query);
     }
 }

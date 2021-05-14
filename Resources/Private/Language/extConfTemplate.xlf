@@ -56,6 +56,9 @@
 			<trans-unit id="undeleteFrontendUsers" resname="undeleteFrontendUsers">
 				<source>Undelete Frontend users : If ticked, will automatically restore Frontend users marked as "deleted" upon successful authentication.</source>
 			</trans-unit>
+			<trans-unit id="softLogoutFrontendUsers" resname="softLogoutFrontendUsers">
+				<source>Soft logout Frontend users : If ticked, Frontend users will have the possibility to not logout from authentication server.</source>
+			</trans-unit>
 
 			<trans-unit id="enableBackendAuthentication" resname="enableBackendAuthentication">
 				<source>Backend Authentication : Enable OpenID Connect authentication for the backend.</source>
@@ -68,6 +71,9 @@
 			</trans-unit>
 			<trans-unit id="undeleteBackendUsers" resname="undeleteBackendUsers">
 				<source>Undelete Backend users : If ticked, will automatically restore Backend users marked as "deleted" upon successful authentication.</source>
+			</trans-unit>
+			<trans-unit id="softLogoutBackendUsers" resname="softLogoutBackendUsers">
+				<source>Soft logout Backend users : If ticked, Backend users will have the possibility to not logout from authentication server.</source>
 			</trans-unit>
 		</body>
 	</file>

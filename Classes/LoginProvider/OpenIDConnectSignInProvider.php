@@ -23,12 +23,14 @@ use FSG\Oidc\Error\HTTPSConnectionException;
 use FSG\Oidc\Service\StatusService;
 use FSG\Oidc\Traits\AuthenticationTrait;
 use League\OAuth2\Client\Provider\GenericProvider;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Session\Session;
 use TYPO3\CMS\Backend\Controller\LoginController;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
+use TYPO3\CMS\Core\Http\ServerRequestFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -62,15 +64,6 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
      * @var Session<mixed>
      */
     private Session $session;
-
-    /**
-     * AuthenticationService constructor.
-     */
-    public function __construct()
-    {
-        $this->extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
-        $this->session                = new Session();
-    }
 
     /**
      * @param StandaloneView  $view
@@ -136,5 +129,19 @@ class OpenIDConnectSignInProvider implements LoginProviderInterface, LoggerAware
         }
 
         return true;
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @param string                 $loginType
+     */
+    protected function initReferrer(ServerRequestInterface $request, string $loginType): void
+    {
+        $request = ServerRequestFactory::fromGlobals();
+        if ($this->session->has('t3oidcOAuthReferrer')) {
+            $this->session->replace(['t3oidcOAuthReferrer' => $request->getServerParams()['HTTP_REFERER']]);
+        } else {
+            $this->session->set('t3oidcOAuthReferrer', $request->getServerParams()['HTTP_REFERER']);
+        }
     }
 }
