@@ -13,6 +13,14 @@ return [
                 'typo3/cms-frontend/backend-user-authentication',
             ],
         ],
+        'fsg/oidc/logout' => [
+            'target' => \FSG\Oidc\Middleware\LogoutMiddleware::class,
+            'after'  => [
+            ],
+            'before' => [
+                'fsg/oidc/authentication',
+            ],
+        ],
         'fsg/oidc/callback'       => [
             'target' => \FSG\Oidc\Middleware\CallbackMiddleware::class,
             'after'  => [
@@ -29,6 +37,14 @@ return [
             ],
             'before' => [
                 'typo3/cms-backend/authentication',
+            ],
+        ],
+        'fsg/oidc/logout' => [
+            'target' => \FSG\Oidc\Middleware\LogoutMiddleware::class,
+            'after'  => [
+            ],
+            'before' => [
+                'fsg/oidc/authentication',
             ],
         ],
         'fsg/oidc/callback'       => [

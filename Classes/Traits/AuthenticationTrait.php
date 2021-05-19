@@ -18,16 +18,26 @@ namespace FSG\Oidc\Traits;
  */
 
 use FSG\Oidc\Domain\Model\Dto\ExtensionConfiguration;
+use FSG\Oidc\LoginProvider\OpenIDConnectSignInProvider;
 use FSG\Oidc\Middleware\CallbackMiddleware;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessToken;
+use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Session\Session;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Service\EnvironmentService;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 
 trait AuthenticationTrait
 {
+
+    /**
+     * @var Context
+     */
+    protected Context $context;
 
     /**
      * @var ExtensionConfiguration
@@ -57,6 +67,7 @@ trait AuthenticationTrait
         $this->extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
         $this->environmentService     = GeneralUtility::makeInstance(EnvironmentService::class);
         $this->session                = new Session();
+        $this->context = GeneralUtility::makeInstance(Context::class);
     }
 
     /**
@@ -78,21 +89,72 @@ trait AuthenticationTrait
     }
 
     /**
-     * Remove local session and return the url of the authentication service logout endpoint.
+     * Remove local session, logout user and return the current context.
      *
      * @return string
      */
     protected function logoutUser(): string
     {
-        $logoutUrl = $this->extensionConfiguration->getEndpointLogout()
-                     . '?post_logout_redirect_uri='
-                     . $this->getCallbackUrl();
+        $context = $this->environmentService->isEnvironmentInBackendMode() ? 'Backend' : 'Frontend';
 
         if ($this->session->has('t3oidcOAuthUser')) {
             $this->session->remove('t3oidcOAuthUser');
         }
 
-        return $logoutUrl;
+        $this->logoutUserFromFrontend();
+        $this->logoutUserFromBackend();
+
+        return $context;
+    }
+
+    /**
+     * Return the url of the authentication service logout endpoint.
+     *
+     * @return string
+     */
+    protected function logoutUserFromEverywhereURL(): string
+    {
+        return $this->extensionConfiguration->getEndpointLogout()
+               . '?post_logout_redirect_uri='
+               . $this->getCallbackUrl();
+    }
+
+    /**
+     *
+     */
+    protected function logoutUserFromFrontend()
+    {
+        $frontendUser = GeneralUtility::makeInstance(FrontendUserAuthentication::class);
+
+        // Authenticate now
+        $frontendUser->start();
+        $frontendUser->unpack_uc();
+        //
+        // // Register the frontend user as aspect and within the session
+        // $this->setFrontendUserAspect($frontendUser);
+        // $request = $request->withAttribute('frontend.user', $frontendUser);
+        //
+        // $response = $handler->handle($request);
+        //
+        // // Store session data for fe_users if it still exists
+        // if ($frontendUser instanceof FrontendUserAuthentication) {
+        //     $frontendUser->storeSessionData();
+        // }
+
+        /**
+         * @var Context
+         */
+        $userAspect = $this->context->getAspect('frontend.user');
+        // $this->context->g  ('frontend.user', GeneralUtility::makeInstance(UserAspect::class, $user));
+
+    }
+
+    /**
+     *
+     */
+    protected function logoutUserFromBackend()
+    {
+
     }
 
     /**
@@ -149,5 +211,41 @@ trait AuthenticationTrait
             }
         }
         return $idTokenClaims;
+    }
+    /**
+     * @param ServerRequestInterface $request
+     * @param string                 $loginType
+     */
+    protected function initReferrer(ServerRequestInterface $request, string $loginType): void
+    {
+        if ($this->environmentService->isEnvironmentInBackendMode()) {
+            $referrer = sprintf(
+                self::BACKEND_URI,
+                GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST'),
+                OpenIDConnectSignInProvider::LOGIN_PROVIDER
+            );
+        } else {
+            $rawReferrer = $request->getServerParams()['HTTP_REFERER'];
+            $uri         = $rawReferrer ? new Uri($rawReferrer) : $request->getUri();
+            parse_str($uri->getQuery(), $queryParams);
+            unset($queryParams['logintype']);
+
+            $query    = http_build_query($queryParams);
+            $query    = $query ? '?' . $query . '&' : '?';
+            $referrer = sprintf(
+                self::FRONTEND_URI,
+                $uri->getScheme(),
+                $uri->getHost(),
+                $uri->getPath(),
+                $query,
+                $loginType
+            );
+        }
+
+        if ($this->session->has('t3oidcOAuthReferrer')) {
+            $this->session->replace(['t3oidcOAuthReferrer' => $referrer]);
+        } else {
+            $this->session->set('t3oidcOAuthReferrer', $referrer);
+        }
     }
 }
