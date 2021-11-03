@@ -71,6 +71,11 @@ class ExtensionConfiguration implements SingletonInterface
     protected bool $frontendUserMustExistLocally = false;
 
     /**
+     * @var string
+     */
+    protected string $frontendUserDefaultGroups = '';
+
+    /**
      * @var bool
      */
     protected bool $reEnableFrontendUsers = false;
@@ -196,6 +201,14 @@ class ExtensionConfiguration implements SingletonInterface
     public function isFrontendUserMustExistLocally(): bool
     {
         return $this->frontendUserMustExistLocally;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFrontendUserDefaultGroups(): array
+    {
+        return GeneralUtility::trimExplode(',', $this->frontendUserDefaultGroups, true);
     }
 
     /**

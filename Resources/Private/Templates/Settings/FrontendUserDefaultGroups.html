@@ -1,0 +1,13 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<select onchange="$('#em-t3oidc-frontendUserDefaultGroups').val($(this).val().join())" multiple="multiple"
+        class="form-control">
+    <f:for as="group" each="{groups}">
+        <option value="{group.uid}" {f:if(condition:group.isSelected,then:' selected')}>{group.title}</option>
+    </f:for>
+</select>
+<input type="hidden" id="em-t3oidc-frontendUserDefaultGroups" name="frontendUserDefaultGroups"/>
+
+</html>

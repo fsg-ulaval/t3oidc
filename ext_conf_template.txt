@@ -9,10 +9,13 @@ enableFrontendAuthentication = 0
 # cat=frontend/enable/2; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:frontendUserMustExistLocally
 frontendUserMustExistLocally = 0
 
-# cat=frontend/enable/3; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:reEnableFrontendUsers
+# cat=frontend/enable/3; type=user[FSG\Oidc\Controller\SettingsController->feGroupGetListAction]; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:frontendUserDefaultGroups
+frontendUserDefaultGroups =
+
+# cat=frontend/enable/4; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:reEnableFrontendUsers
 reEnableFrontendUsers = 0
 
-# cat=frontend/enable/4; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:undeleteFrontendUsers
+# cat=frontend/enable/5; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:undeleteFrontendUsers
 undeleteFrontendUsers = 0
 
 # cat=backend/enable/1; type=boolean; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:enableBackendAuthentication
