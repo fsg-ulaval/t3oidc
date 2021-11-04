@@ -190,10 +190,10 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $this->queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                                             ->getQueryBuilderForTable($this->db_user['table']);
 
-        $userPerms = $this->fetchUserPerms();
+        $context   = $this->authInfo['loginType'] == 'BE' ? 'Backend' : 'Frontend';
+        $userPerms = $this->fetchUserPerms($context);
         $user      = $this->fetchUserIfItExists();
 
-        $context = $this->authInfo['loginType'] == 'BE' ? 'Backend' : 'Frontend';
         // Insert a new user into database
         if (!empty($userPerms) && empty($user)
             && !$this->extensionConfiguration->{'is' . $context . 'UserMustExistLocally'}()) {
@@ -229,11 +229,47 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     /**
      * Fetches the user permissions based on its roles.
      *
+     * @param string $context
+     *
      * @return array<string, mixed>
+     * @throws Exception
      */
-    public function fetchUserPerms(): array
+    public function fetchUserPerms(string $context): array
     {
         $userPerms = ['isAdmin' => false, 'groups' => []];
+
+        if (method_exists(ExtensionConfiguration::class, 'get' . $context . 'UserDefaultGroups')
+            && !empty($this->extensionConfiguration->{'get' . $context . 'UserDefaultGroups'}())) {
+            $query             = GeneralUtility::makeInstance(ConnectionPool::class)
+                                               ->getQueryBuilderForTable($this->db_groups['table']);
+            $expressionBuilder = $query->expr();
+            $constraints       = $expressionBuilder->andX(
+                $expressionBuilder->in(
+                    'uid',
+                    $query->createNamedParameter(
+                        $this->extensionConfiguration->{'get' . $context . 'UserDefaultGroups'}(),
+                        Connection::PARAM_INT_ARRAY
+                    )
+                ),
+                $expressionBuilder->orX(
+                    $expressionBuilder->eq('lockToDomain', $query->quote('')),
+                    $expressionBuilder->isNull('lockToDomain'),
+                    $expressionBuilder->eq(
+                        'lockToDomain',
+                        $query->createNamedParameter(GeneralUtility::getIndpEnv('HTTP_HOST'))
+                    )
+                )
+            );
+
+            $res = $query->select('uid')
+                         ->from($this->db_groups['table'])
+                         ->where($constraints)
+                         ->execute();
+
+            foreach ($res->fetchAllAssociative() as $group) {
+                $userPerms['groups'][] = $group['uid'];
+            }
+        }
 
         $rolesKey = array_key_exists('roles', $this->userInfo) ? 'roles' : 'Roles';
         if (!is_array($this->userInfo[$rolesKey]) || empty($this->userInfo[$rolesKey])) {
@@ -670,11 +706,11 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                 [$user[$this->db_user['username_column']], $user['lockToDomain'], $queriedDomain]
             );
             $this->logger->info(sprintf(
-                $errorMessage,
-                $user[$this->db_user['username_column']],
-                $user['lockToDomain'],
-                $queriedDomain
-            ));
+                                    $errorMessage,
+                                    $user[$this->db_user['username_column']],
+                                    $user['lockToDomain'],
+                                    $queriedDomain
+                                ));
             // Responsible, authentication ok, but domain lock not ok, do NOT check other services
             $this->session->set(
                 't3oidcOAuthUserAccessDenied',
