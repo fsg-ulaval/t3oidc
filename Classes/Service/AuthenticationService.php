@@ -382,7 +382,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             'crdate'          => time(),
             'disable'         => 0,
             'endtime'         => $endtime->getTimestamp(),
-            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+            'username'        => $this->getUsername(),
             'password'        => $this->getPassword(),
             'usergroup'       => implode(',', $userPerms['groups']),
             'name'            => $this->userInfo['name'] ?? '',
@@ -413,6 +413,16 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         }
 
         return $defaults;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getUsername(): string
+    {
+        $userPrincipalName = $this->userInfo[$this->extensionConfiguration->getTokenUserPrincipalNameOrFallback()] ?:
+            $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()];
+        return strtolower($userPrincipalName);
     }
 
     /**
@@ -450,7 +460,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             'crdate'          => time(),
             'disable'         => 0,
             'endtime'         => $endtime->getTimestamp(),
-            'username'        => $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()],
+            'username'        => $this->getUsername(),
             'password'        => $this->getPassword(),
             'admin'           => ($userPerms['isAdmin'] ? 1 : 0),
             'usergroup'       => implode(',', $userPerms['groups']),
@@ -508,6 +518,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $endtime = new DateTime('today +3 month');
         $query   = clone $this->queryBuilder;
         $updated = (bool)$query->update($this->db_user['table'])
+                               ->set('username', $this->getUsername())
                                ->set('usergroup', implode(',', $userPerms['groups']))
                                ->set('email', $this->userInfo['email'])
                                ->set('name', $this->userInfo['name'])
@@ -527,6 +538,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->execute();
 
         if ($updated) {
+            $user['username']  = $this->getUsername();
             $user['usergroup'] = implode(',', $userPerms['groups']);
             $user['email']     = $this->userInfo['email'];
             $user['name']      = $this->userInfo['name'];
@@ -552,6 +564,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $endtime = new DateTime('today +3 month');
         $query   = clone $this->queryBuilder;
         $updated = (bool)$query->update($this->db_user['table'])
+                               ->set('username', $this->getUsername())
                                ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
                                ->set('usergroup', implode(',', $userPerms['groups']))
                                ->set('email', $this->userInfo['email'])
@@ -577,6 +590,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->execute();
 
         if ($updated) {
+            $user['username']  = $this->getUsername();
             $user['admin']     = $userPerms['isAdmin'];
             $user['usergroup'] = implode(',', $userPerms['groups']);
             $user['email']     = $this->userInfo['email'];

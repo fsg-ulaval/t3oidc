@@ -43,6 +43,9 @@
 			<trans-unit id="token.userIdentifier" resname="token.userIdentifier">
 				<source>User identifier : The property of the ID token containing the unique user ID (default: "sub").</source>
 			</trans-unit>
+			<trans-unit id="token.userPrincipalName" resname="token.userPrincipalName">
+				<source>User Principal Name : The property of the ID token containing the username to use (Will fallback to the user identifier if empty)</source>
+			</trans-unit>
 
 			<trans-unit id="enableFrontendAuthentication" resname="enableFrontendAuthentication">
 				<source>Frontend Authentication : Enable OpenID Connect authentication for the frontend.</source>

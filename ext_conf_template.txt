@@ -56,3 +56,6 @@ endpointLogout =
 
 # cat=advanced/token/1; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:token.userIdentifier
 tokenUserIdentifier = sub
+
+# cat=advanced/token/2; type=string; label=LLL:EXT:t3oidc/Resources/Private/Language/extConfTemplate.xlf:token.userPrincipalName
+tokenUserPrincipalName =

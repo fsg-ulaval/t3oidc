@@ -116,6 +116,11 @@ class ExtensionConfiguration implements SingletonInterface
     protected string $tokenUserIdentifier = '';
 
     /**
+     * @var string
+     */
+    protected string $tokenUserPrincipalName = '';
+
+    /**
      * ExtensionConfiguration constructor.
      */
     public function __construct()
@@ -273,5 +278,21 @@ class ExtensionConfiguration implements SingletonInterface
     public function getTokenUserIdentifier(): string
     {
         return $this->tokenUserIdentifier;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTokenUserPrincipalName(): string
+    {
+        return $this->tokenUserPrincipalName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTokenUserPrincipalNameOrFallback(): string
+    {
+        return $this->getTokenUserPrincipalName()?:$this->getTokenUserIdentifier();
     }
 }
