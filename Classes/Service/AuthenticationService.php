@@ -394,7 +394,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
 
         $query->insert($this->db_user['table'])->values($values)->execute();
 
-        return $this->fetchUserRecord($preset['oidc_identifier']);
+        $dbUser = array_merge($this->db_user, ['username_column' => 'oidc_identifier']);
+        return $this->fetchUserRecord($preset['oidc_identifier'], '', $dbUser);
     }
 
     /**
@@ -462,7 +463,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
 
         $query->insert($this->db_user['table'])->values($values)->execute();
 
-        return $this->fetchUserRecord($preset['oidc_identifier']);
+        $dbUser = array_merge($this->db_user, ['username_column' => 'oidc_identifier']);
+        return $this->fetchUserRecord($preset['oidc_identifier'], '', $dbUser);
     }
 
     /**
