@@ -323,9 +323,21 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     {
         $query = clone $this->queryBuilder;
         $query->getRestrictions()->removeAll();
-        $constraint = $query->expr()->eq(
-            'oidc_identifier',
-            $query->createNamedParameter($this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()])
+
+        $tokenUserIdentifierNamedParameter = $query->createNamedParameter(
+            $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()]
+        );
+
+        $tokenUserPrincipalNameNamedParameter = $query->createNamedParameter(
+            strtolower($this->userInfo[$this->extensionConfiguration->getTokenUserPrincipalNameOrFallback()])
+        );
+
+        $constraint = $query->expr()->orX(
+            $query->expr()->eq('oidc_identifier', $tokenUserIdentifierNamedParameter),
+            $query->expr()->andX(
+                $query->expr()->eq('username', $tokenUserPrincipalNameNamedParameter),
+                $query->expr()->eq('oidc_identifier', $query->createNamedParameter(''))
+            )
         );
 
         /** @var Result $result */
@@ -517,6 +529,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     {
         $endtime = new DateTime('today +3 month');
         $query   = clone $this->queryBuilder;
+
+        $tokenUserIdentifier = $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()];
+
         $updated = (bool)$query->update($this->db_user['table'])
                                ->set('username', $this->getUsername())
                                ->set('usergroup', implode(',', $userPerms['groups']))
@@ -526,6 +541,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->set('disable', '0', true, PDO::PARAM_INT)
                                ->set('starttime', '0', true, PDO::PARAM_INT)
                                ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                               ->set('oidc_identifier', $tokenUserIdentifier)
                                ->where(
                                    $query->expr()->eq(
                                        'uid',
@@ -538,14 +554,15 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->execute();
 
         if ($updated) {
-            $user['username']  = $this->getUsername();
-            $user['usergroup'] = implode(',', $userPerms['groups']);
-            $user['email']     = $this->userInfo['email'];
-            $user['name']      = $this->userInfo['name'];
-            $user['starttime'] = 0;
-            $user['endtime']   = $endtime->getTimestamp();
-            $user['deleted']   = 0;
-            $user['disable']   = 0;
+            $user['username']        = $this->getUsername();
+            $user['usergroup']       = implode(',', $userPerms['groups']);
+            $user['email']           = $this->userInfo['email'];
+            $user['name']            = $this->userInfo['name'];
+            $user['starttime']       = 0;
+            $user['endtime']         = $endtime->getTimestamp();
+            $user['deleted']         = 0;
+            $user['disable']         = 0;
+            $user['oidc_identifier'] = $tokenUserIdentifier;
         }
 
         return $updated;
