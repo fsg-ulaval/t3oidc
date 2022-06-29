@@ -377,7 +377,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $endtime  = new DateTime('today +3 month');
 
         $preset = [
-            'pid'             => 0,
+            'pid'             => current(GeneralUtility::intExplode(',', $this->db_user['checkPidList'])),
             'tstamp'          => time(),
             'crdate'          => time(),
             'disable'         => 0,
