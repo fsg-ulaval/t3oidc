@@ -46,7 +46,8 @@ class ModifyLoginFormViewListener
     public function __invoke(ModifyLoginFormViewEvent $event): void
     {
         if ($this->extensionConfiguration->isEnableFrontendAuthentication()) {
-            $event->getView()->assign('oidcAuthenticationUrl', AuthenticationMiddleware::PATH);
+            $queryParam = $_SERVER['REQUEST_URI']?'?referrer='.$_SERVER['REQUEST_URI']:'';
+            $event->getView()->assign('oidcAuthenticationUrl', AuthenticationMiddleware::PATH . $queryParam);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace FSG\Oidc\Middleware;
  * The TYPO3 project - inspiring people to share!
  */
 
+use FSG\Oidc\Error\InvalidRequestException;
 use FSG\Oidc\LoginProvider\OpenIDConnectSignInProvider;
 use FSG\Oidc\Traits\AuthenticationTrait;
 use Psr\Http\Message\ResponseInterface;
@@ -61,11 +62,25 @@ class AuthenticationMiddleware implements MiddlewareInterface, LoggerAwareInterf
      * @param ServerRequestInterface $request
      *
      * @return RedirectResponse
+     * @throws InvalidRequestException
      */
     protected function handleCallback(ServerRequestInterface $request): RedirectResponse
     {
-        $uri      = new Uri($request->getServerParams()['HTTP_REFERER']);
-        $referrer = sprintf('%s://%s%s', $uri->getScheme(), $uri->getHost(), $uri->getPath());
+        if (array_key_exists('referrer', $request->getQueryParams())) {
+            $uri = new Uri($request->getQueryParams()['referrer']);
+        } else {
+            $uri = new Uri($request->getServerParams()['HTTP_REFERER']);
+        }
+
+        if ($uri->getHost() !== '' && $uri->getHost() !== $request->getUri()->getHost()) {
+            throw new InvalidRequestException('Referrer does not match current host value', 1657049097);
+        }
+
+        $referrer = sprintf('%s://%s%s?%s',
+                            $request->getUri()->getScheme(),
+                            $request->getUri()->getHost(),
+                            $uri->getPath(),
+                            $uri->getQuery());
 
         $queryParams = $request->getQueryParams();
         if ($queryParams['action'] === LoginType::LOGOUT) {
