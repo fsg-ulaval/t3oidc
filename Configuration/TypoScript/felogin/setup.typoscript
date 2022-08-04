@@ -15,6 +15,7 @@
       #Features
       showLogoutFormAfterLogin = {$styles.content.loginform.showLogoutFormAfterLogin}
       showLoginForm = {$styles.content.loginform.showLoginForm}
+      strictMode = {$styles.content.loginform.strictMode}
     }
   }
 [end]
