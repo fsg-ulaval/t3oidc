@@ -31,7 +31,9 @@ class LoginController extends \TYPO3\CMS\FrontendLogin\Controller\LoginControlle
      */
     public function initializeLoginAction(): void
     {
-        if ($this->settings['strictMode'] === '1' && !$this->userAspect->isLoggedIn()) {
+        if ($this->settings['strictMode'] === '1'
+            && !$this->userAspect->isLoggedIn()
+            && !$this->isLoginOrLogoutInProgress()) {
             $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
 
             if ($extensionConfiguration->isEnableFrontendAuthentication()) {
