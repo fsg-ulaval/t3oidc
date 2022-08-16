@@ -580,6 +580,9 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
     {
         $endtime = new DateTime('today +3 month');
         $query   = clone $this->queryBuilder;
+
+        $tokenUserIdentifier = $this->userInfo[$this->extensionConfiguration->getTokenUserIdentifier()];
+
         $updated = (bool)$query->update($this->db_user['table'])
                                ->set('username', $this->getUsername())
                                ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
@@ -595,6 +598,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->set('disable', '0', true, PDO::PARAM_INT)
                                ->set('starttime', '0', true, PDO::PARAM_INT)
                                ->set('endtime', (string)$endtime->getTimestamp(), true, PDO::PARAM_INT)
+                               ->set('oidc_identifier', $tokenUserIdentifier)
                                ->where(
                                    $query->expr()->eq(
                                        'uid',
@@ -616,6 +620,7 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             $user['endtime']   = $endtime->getTimestamp();
             $user['deleted']   = 0;
             $user['disable']   = 0;
+            $user['oidc_identifier'] = $tokenUserIdentifier;
         }
 
         return $updated;
