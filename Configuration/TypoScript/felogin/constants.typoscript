@@ -13,6 +13,9 @@
     }
 
     # cat=Frontend Login/07_OIDC/400; type=boolean; label= Display login form: If set, the section in the template to display the default login form of TYPO3 is visible.
-    showLoginForm = 0
+    showLoginForm = 1
+
+    # cat=Frontend Login/07_OIDC/410; type=boolean; label= Strict mode : If set, the login plugin will redirect to the external account manager login page.
+    strictMode = 0
   }
 [end]
