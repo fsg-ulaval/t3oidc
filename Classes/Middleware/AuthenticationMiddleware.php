@@ -67,7 +67,13 @@ class AuthenticationMiddleware implements MiddlewareInterface, LoggerAwareInterf
     protected function handleCallback(ServerRequestInterface $request): RedirectResponse
     {
         if (array_key_exists('referrer', $request->getQueryParams())) {
-            $uri = new Uri($request->getQueryParams()['referrer']);
+            $cHash_param = '';
+            if (array_key_exists('cHash', $request->getQueryParams())
+                && $request->getQueryParams()['cHash'] !== '') {
+                $cHash_param = '&cHash=' . $request->getQueryParams()['cHash'];
+            }
+
+            $uri = new Uri($request->getQueryParams()['referrer'] . $cHash_param);
         } else {
             $uri = new Uri($request->getServerParams()['HTTP_REFERER']);
         }
