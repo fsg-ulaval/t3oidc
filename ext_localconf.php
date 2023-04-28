@@ -58,6 +58,8 @@ defined('TYPO3_MODE') || die();
         'className' => \FSG\Oidc\Controller\LoginController::class,
     ];
 
+    $GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParameters'][] = 'logintype';
+
     // Require 3rd-party libraries, in case TYPO3 does not run in composer mode
     $pharFileName = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($extKey)
                     . 'Libraries/league-oauth2-client.phar';
