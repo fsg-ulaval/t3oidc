@@ -535,8 +535,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         $updated = (bool)$query->update($this->db_user['table'])
                                ->set('username', $this->getUsername())
                                ->set('usergroup', implode(',', $userPerms['groups']))
-                               ->set('email', $this->userInfo['email'])
-                               ->set('name', $this->userInfo['name'])
+                               ->set('email', $this->userInfo['email'] ?? '')
+                               ->set('name', $this->userInfo['name'] ?? '')
                                ->set('deleted', (count($userPerms['groups']) ? '0' : '1'), true, PDO::PARAM_INT)
                                ->set('disable', '0', true, PDO::PARAM_INT)
                                ->set('starttime', '0', true, PDO::PARAM_INT)
@@ -556,8 +556,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
         if ($updated) {
             $user['username']        = $this->getUsername();
             $user['usergroup']       = implode(',', $userPerms['groups']);
-            $user['email']           = $this->userInfo['email'];
-            $user['name']            = $this->userInfo['name'];
+            $user['email']           = $this->userInfo['email'] ?? '';
+            $user['name']            = $this->userInfo['name'] ?? '';
             $user['starttime']       = 0;
             $user['endtime']         = $endtime->getTimestamp();
             $user['deleted']         = 0;
@@ -587,8 +587,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
                                ->set('username', $this->getUsername())
                                ->set('admin', $userPerms['isAdmin'], true, PDO::PARAM_BOOL)
                                ->set('usergroup', implode(',', $userPerms['groups']))
-                               ->set('email', $this->userInfo['email'])
-                               ->set('realName', $this->userInfo['name'])
+                               ->set('email', $this->userInfo['email'] ?? '')
+                               ->set('realName', $this->userInfo['name'] ?? '')
                                ->set(
                                    'deleted',
                                    (($userPerms['isAdmin'] || count($userPerms['groups'])) ? '0' : '1'),
@@ -614,8 +614,8 @@ class AuthenticationService extends \TYPO3\CMS\Core\Authentication\Authenticatio
             $user['username']  = $this->getUsername();
             $user['admin']     = $userPerms['isAdmin'];
             $user['usergroup'] = implode(',', $userPerms['groups']);
-            $user['email']     = $this->userInfo['email'];
-            $user['realName']  = $this->userInfo['name'];
+            $user['email']     = $this->userInfo['email'] ?? '';
+            $user['realName']  = $this->userInfo['name'] ?? '';
             $user['starttime'] = 0;
             $user['endtime']   = $endtime->getTimestamp();
             $user['deleted']   = 0;
